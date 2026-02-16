@@ -1,0 +1,10 @@
+.build/
+.swiftpm/
+*.xcodeproj/
+xcuserdata/
+DerivedData/
+*.har
+cloudkit-api-calls.txt
+auth.json
+.DS_Store
+.claude/
