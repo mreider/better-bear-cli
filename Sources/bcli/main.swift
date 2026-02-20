@@ -15,6 +15,7 @@ struct BearCLI: ParsableCommand {
             CreateNote.self,
             EditNote.self,
             TrashNote.self,
+            TodoCommand.self,
             ExportNotes.self,
             SyncCommand.self,
         ]

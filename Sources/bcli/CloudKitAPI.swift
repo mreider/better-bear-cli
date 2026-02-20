@@ -301,6 +301,10 @@ struct CloudKitAPI {
         let existingClock = record.fields["vectorClock"]?.value.stringValue ?? ""
         let newClock = incrementVectorClock(existingClock)
 
+        // Count TODO items to keep CloudKit metadata accurate
+        let todoCompletedCount = newText.components(separatedBy: "- [x]").count - 1
+        let todoIncompletedCount = newText.components(separatedBy: "- [ ]").count - 1
+
         let fields: [String: AnyCodableValue] = [
             "textADP": .dictionary([
                 "value": .string(newText),
@@ -327,6 +331,14 @@ struct CloudKitAPI {
             "lastEditingDevice": .dictionary([
                 "value": .string("Bear CLI"),
                 "type": .string("STRING"),
+            ]),
+            "todoCompleted": .dictionary([
+                "value": .int(Int64(todoCompletedCount)),
+                "type": .string("INT64"),
+            ]),
+            "todoIncompleted": .dictionary([
+                "value": .int(Int64(todoIncompletedCount)),
+                "type": .string("INT64"),
             ]),
         ]
 
