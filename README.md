@@ -64,6 +64,12 @@ bcli trash <id>                      Move to trash
 bcli export ./dir                    Export all notes as markdown
 bcli export ./dir --frontmatter      Include YAML metadata
 bcli export ./dir --tag work         Export only matching tag
+bcli todo                            List notes with incomplete TODOs
+bcli todo --limit 10                 Limit results
+bcli todo <id>                       View TODOs in a note (interactive toggle)
+bcli todo <id> --toggle 3            Toggle item 3 without prompting
+bcli todo --json                     JSON output
+bcli todo --no-sync                  Skip auto-sync
 ```
 
 ## How it works
