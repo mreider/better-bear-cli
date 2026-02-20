@@ -571,6 +571,28 @@ struct CloudKitAPI {
         return makeVectorClock(device: "Bear CLI", counter: 1)
     }
 
+    // MARK: - Zone Changes (incremental sync)
+
+    func fetchZoneChanges(syncToken: String?, resultsLimit: Int = 200) async throws -> CKZoneChangeResult {
+        var zone: [String: AnyCodableValue] = [
+            "zoneID": .dictionary(["zoneName": .string("Notes")]),
+            "resultsLimit": .int(Int64(resultsLimit)),
+        ]
+        if let token = syncToken {
+            zone["syncToken"] = .string(token)
+        }
+
+        let body: [String: AnyCodableValue] = [
+            "zones": .array([.dictionary(zone)]),
+        ]
+
+        let response: CKZoneChangesResponse = try await post(path: "changes/zone", body: body)
+        guard let result = response.zones.first else {
+            throw BearCLIError.networkError("No zone in changes response")
+        }
+        return result
+    }
+
     // MARK: - Search (client-side title match)
 
     func searchNotes(query searchTerm: String, limit: Int = 50) async throws -> [CKRecord] {

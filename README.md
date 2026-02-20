@@ -50,7 +50,10 @@ bcli ls --all --tag work --json      Filter by tag, JSON output
 bcli get <id>                        View a note with metadata
 bcli get <id> --raw                  Just the markdown
 bcli tags                            Tag tree
-bcli search "query"                  Search by title or tag
+bcli sync                            Sync notes to local cache
+bcli sync --full                     Force full re-sync
+bcli search "query"                  Full-text search (title, tags, body)
+bcli search "query" --no-sync        Search without syncing first
 bcli create "Title" -b "Body"        Create a note
 bcli create "Title" -t "t1,t2"       Create with tags
 bcli create "Title" --stdin          Pipe content from stdin

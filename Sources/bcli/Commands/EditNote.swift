@@ -98,6 +98,12 @@ struct EditNote: ParsableCommand {
             let note = BearNote(from: updated)
             print("Updated: \(note.title)")
             print("ID: \(note.uniqueIdentifier)")
+
+            // Update local cache
+            if NoteCache.exists(), var cache = try? NoteCache.load() {
+                cache.upsertFromRecord(updated, text: newText)
+                try? cache.save()
+            }
         }
     }
 

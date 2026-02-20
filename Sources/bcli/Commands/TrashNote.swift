@@ -50,8 +50,14 @@ struct TrashNote: ParsableCommand {
                 }
             }
 
-            let _ = try await api.trashNote(record: record)
+            let trashed = try await api.trashNote(record: record)
             print("Trashed: \(note.title)")
+
+            // Update local cache
+            if NoteCache.exists(), var cache = try? NoteCache.load() {
+                cache.markTrashed(recordName: trashed.recordName)
+                try? cache.save()
+            }
         }
     }
 }

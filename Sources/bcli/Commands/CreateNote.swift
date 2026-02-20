@@ -61,6 +61,15 @@ struct CreateNote: ParsableCommand {
                     print("Tags: \(tagList.joined(separator: ", "))")
                 }
             }
+
+            // Update local cache
+            if NoteCache.exists(), var cache = try? NoteCache.load() {
+                var markdown = "# \(title)"
+                if !tagList.isEmpty { markdown += "\n" + tagList.map { "#\($0)" }.joined(separator: " ") }
+                if !bodyText.isEmpty { markdown += "\n\n\(bodyText)" }
+                cache.upsertFromRecord(record, text: markdown)
+                try? cache.save()
+            }
         }
     }
 }

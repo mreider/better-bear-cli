@@ -83,6 +83,20 @@ struct CKRecord: Decodable {
     let recordChangeTag: String?
     let created: CKTimestamp?
     let modified: CKTimestamp?
+    let deleted: Bool?
+}
+
+// MARK: - CloudKit Zone Changes (for incremental sync)
+
+struct CKZoneChangesResponse: Decodable {
+    let zones: [CKZoneChangeResult]
+}
+
+struct CKZoneChangeResult: Decodable {
+    let zoneID: CKZoneID
+    let moreComing: Bool
+    let syncToken: String
+    let records: [CKRecord]
 }
 
 struct CKTimestamp: Decodable {
