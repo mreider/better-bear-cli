@@ -109,15 +109,17 @@ public struct TodoCommand: ParsableCommand {
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
 
-            print("ID".padding(toLength: 38, withPad: " ", startingAt: 0) + "  " +
+            let idWidth = max(38, limited.map { $0.note.uniqueIdentifier.count }.max() ?? 38)
+
+            print("ID".padding(toLength: idWidth, withPad: " ", startingAt: 0) + "  " +
                   "TODOs".padding(toLength: 10, withPad: " ", startingAt: 0) + "  " + "Title")
-            print(String(repeating: "-", count: 90))
+            print(String(repeating: "-", count: idWidth + 2 + 10 + 2 + 20))
 
             for result in limited {
                 let note = result.note
                 let todoStr = "\(result.incomplete) left"
                 let tags = note.tags.isEmpty ? "" : " [\(note.tags.joined(separator: ", "))]"
-                print(note.uniqueIdentifier.padding(toLength: 38, withPad: " ", startingAt: 0) + "  " +
+                print(note.uniqueIdentifier.padding(toLength: idWidth, withPad: " ", startingAt: 0) + "  " +
                       todoStr.padding(toLength: 10, withPad: " ", startingAt: 0) + "  " +
                       "\(note.title)\(tags)")
             }

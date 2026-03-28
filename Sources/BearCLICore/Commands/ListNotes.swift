@@ -79,16 +79,18 @@ public struct ListNotes: ParsableCommand {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
 
-        print("ID".padding(toLength: 38, withPad: " ", startingAt: 0) + "  " +
+        let idWidth = max(38, notes.map { $0.uniqueIdentifier.count }.max() ?? 38)
+
+        print("ID".padding(toLength: idWidth, withPad: " ", startingAt: 0) + "  " +
               "Modified".padding(toLength: 16, withPad: " ", startingAt: 0) + "  " + "Title")
-        print(String(repeating: "─", count: 90))
+        print(String(repeating: "─", count: idWidth + 2 + 16 + 2 + 20))
 
         for note in notes {
             let modified = note.modificationDate.map { dateFormatter.string(from: $0) } ?? "unknown"
             let pin = note.pinned ? "* " : ""
             let tags = note.tags.isEmpty ? "" : " [\(note.tags.joined(separator: ", "))]"
             let title = "\(pin)\(note.title)\(tags)"
-            print(note.uniqueIdentifier.padding(toLength: 38, withPad: " ", startingAt: 0) + "  " +
+            print(note.uniqueIdentifier.padding(toLength: idWidth, withPad: " ", startingAt: 0) + "  " +
                   modified.padding(toLength: 16, withPad: " ", startingAt: 0) + "  " + title)
         }
 
