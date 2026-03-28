@@ -1,8 +1,12 @@
 import Foundation
 
 /// Client for CloudKit Web Services REST API targeting Bear's iCloud container.
-struct CloudKitAPI {
-    let auth: AuthConfig
+public struct CloudKitAPI {
+    public let auth: AuthConfig
+
+    public init(auth: AuthConfig) {
+        self.auth = auth
+    }
 
     private let baseURL = "https://api.apple-cloudkit.com/database/1/iCloud.net.shinyfrog.bear/production/private"
     private let bearZone = CKZoneID(zoneName: "Notes", ownerRecordName: nil)
@@ -50,7 +54,7 @@ struct CloudKitAPI {
 
     // MARK: - Zones
 
-    func listZones() async throws -> [CKZone] {
+    public func listZones() async throws -> [CKZone] {
         struct Empty: Encodable {}
         let response: CKZoneListResponse = try await post(path: "zones/list", body: Empty())
         return response.zones
@@ -58,7 +62,7 @@ struct CloudKitAPI {
 
     // MARK: - Query Notes
 
-    func queryNotes(
+    public func queryNotes(
         trashed: Bool = false,
         archived: Bool = false,
         limit: Int = 50,
@@ -98,7 +102,7 @@ struct CloudKitAPI {
     }
 
     /// Query notes with pagination support, fetching all results
-    func queryAllNotes(
+    public func queryAllNotes(
         trashed: Bool = false,
         archived: Bool = false,
         desiredKeys: [String]? = nil
@@ -151,7 +155,7 @@ struct CloudKitAPI {
 
     // MARK: - Query Tags
 
-    func queryTags(limit: Int = 200) async throws -> [CKRecord] {
+    public func queryTags(limit: Int = 200) async throws -> [CKRecord] {
         let query = CKQuery(
             recordType: "SFNoteTag",
             filterBy: [],
@@ -170,7 +174,7 @@ struct CloudKitAPI {
 
     // MARK: - Lookup by ID
 
-    func lookupRecords(ids: [String], desiredKeys: [String]? = nil) async throws -> [CKRecord] {
+    public func lookupRecords(ids: [String], desiredKeys: [String]? = nil) async throws -> [CKRecord] {
         let request = CKRecordLookupRequest(
             records: ids.map { CKRecordRef(recordName: $0) },
             zoneID: bearZone,
@@ -183,7 +187,7 @@ struct CloudKitAPI {
 
     // MARK: - Download Asset (note text)
 
-    func downloadAsset(url: String) async throws -> String {
+    public func downloadAsset(url: String) async throws -> String {
         guard let assetURL = URL(string: url) else {
             throw BearCLIError.invalidURL(url)
         }
@@ -203,7 +207,7 @@ struct CloudKitAPI {
 
     // MARK: - Modify Records (create/update)
 
-    func modifyRecords(operations: [[String: AnyCodableValue]]) async throws -> [CKRecord] {
+    public func modifyRecords(operations: [[String: AnyCodableValue]]) async throws -> [CKRecord] {
         let body: [String: AnyCodableValue] = [
             "operations": .array(operations.map { .dictionary($0) }),
             "zoneID": .dictionary(["zoneName": .string("Notes")]),
@@ -214,7 +218,7 @@ struct CloudKitAPI {
     }
 
     /// Create a new note. Returns the created CKRecord.
-    func createNote(title: String, text: String, tags: [String] = []) async throws -> CKRecord {
+    public func createNote(title: String, text: String, tags: [String] = []) async throws -> CKRecord {
         let noteID = UUID().uuidString
         let now = Int64(Date().timeIntervalSince1970 * 1000)
 
@@ -280,7 +284,7 @@ struct CloudKitAPI {
     }
 
     /// Update an existing note's text content.
-    func updateNote(record: CKRecord, newText: String) async throws -> CKRecord {
+    public func updateNote(record: CKRecord, newText: String) async throws -> CKRecord {
         let now = Int64(Date().timeIntervalSince1970 * 1000)
 
         // Extract title from the first H1 line of the new text, or keep existing
@@ -393,7 +397,7 @@ struct CloudKitAPI {
     }
 
     /// Trash a note (soft delete).
-    func trashNote(record: CKRecord) async throws -> CKRecord {
+    public func trashNote(record: CKRecord) async throws -> CKRecord {
         let now = Int64(Date().timeIntervalSince1970 * 1000)
         let newClock = incrementVectorClock(
             record.fields["vectorClock"]?.value.stringValue ?? ""
@@ -602,7 +606,7 @@ struct CloudKitAPI {
 
     // MARK: - Zone Changes (incremental sync)
 
-    func fetchZoneChanges(syncToken: String?, resultsLimit: Int = 200) async throws -> CKZoneChangeResult {
+    public func fetchZoneChanges(syncToken: String?, resultsLimit: Int = 200) async throws -> CKZoneChangeResult {
         var zone: [String: AnyCodableValue] = [
             "zoneID": .dictionary(["zoneName": .string("Notes")]),
             "resultsLimit": .int(Int64(resultsLimit)),
@@ -624,7 +628,7 @@ struct CloudKitAPI {
 
     // MARK: - Search (client-side title match)
 
-    func searchNotes(query searchTerm: String, limit: Int = 50) async throws -> [CKRecord] {
+    public func searchNotes(query searchTerm: String, limit: Int = 50) async throws -> [CKRecord] {
         // CloudKit doesn't support full-text search natively.
         // Fetch the lightweight index and filter client-side by title.
         let allRecords = try await queryAllNotes(
@@ -651,7 +655,7 @@ struct CloudKitAPI {
 
 // MARK: - Errors
 
-enum BearCLIError: Error, CustomStringConvertible {
+public enum BearCLIError: Error, CustomStringConvertible {
     case authExpired
     case authNotConfigured
     case apiError(Int, String)
@@ -659,7 +663,7 @@ enum BearCLIError: Error, CustomStringConvertible {
     case invalidURL(String)
     case noteNotFound(String)
 
-    var description: String {
+    public var description: String {
         switch self {
         case .authExpired:
             return "Auth token expired. Run `bcli auth` to re-authenticate."
