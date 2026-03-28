@@ -1,8 +1,8 @@
 import ArgumentParser
 import Foundation
 
-struct ExportNotes: ParsableCommand {
-    static let configuration = CommandConfiguration(
+public struct ExportNotes: ParsableCommand {
+    public static let configuration = CommandConfiguration(
         commandName: "export",
         abstract: "Export Bear notes as markdown files"
     )
@@ -19,7 +19,9 @@ struct ExportNotes: ParsableCommand {
     @Flag(name: .long, help: "Include YAML frontmatter with metadata")
     var frontmatter: Bool = false
 
-    func run() throws {
+    public init() {}
+
+    public func run() throws {
         let auth = try loadAuth()
         let api = CloudKitAPI(auth: auth)
         let outputDir = self.outputDir

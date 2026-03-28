@@ -1,8 +1,8 @@
 import ArgumentParser
 import Foundation
 
-struct EditNote: ParsableCommand {
-    static let configuration = CommandConfiguration(
+public struct EditNote: ParsableCommand {
+    public static let configuration = CommandConfiguration(
         commandName: "edit",
         abstract: "Edit a Bear note"
     )
@@ -19,7 +19,9 @@ struct EditNote: ParsableCommand {
     @Flag(name: .long, help: "Open in $EDITOR for interactive editing")
     var editor: Bool = false
 
-    func run() throws {
+    public init() {}
+
+    public func run() throws {
         let auth = try loadAuth()
         let api = CloudKitAPI(auth: auth)
         let noteID = self.noteID

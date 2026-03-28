@@ -1,8 +1,8 @@
 import ArgumentParser
 import Foundation
 
-struct CreateNote: ParsableCommand {
-    static let configuration = CommandConfiguration(
+public struct CreateNote: ParsableCommand {
+    public static let configuration = CommandConfiguration(
         commandName: "create",
         abstract: "Create a new Bear note"
     )
@@ -22,7 +22,9 @@ struct CreateNote: ParsableCommand {
     @Flag(name: .long, help: "Output created note ID only (for scripting)")
     var quiet: Bool = false
 
-    func run() throws {
+    public init() {}
+
+    public func run() throws {
         let auth = try loadAuth()
         let api = CloudKitAPI(auth: auth)
         let title = self.title

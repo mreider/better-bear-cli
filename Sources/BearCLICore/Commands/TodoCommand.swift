@@ -1,8 +1,8 @@
 import ArgumentParser
 import Foundation
 
-struct TodoCommand: ParsableCommand {
-    static let configuration = CommandConfiguration(
+public struct TodoCommand: ParsableCommand {
+    public static let configuration = CommandConfiguration(
         commandName: "todo",
         abstract: "List and toggle TODO items in Bear notes"
     )
@@ -22,7 +22,9 @@ struct TodoCommand: ParsableCommand {
     @Option(name: .shortAndLong, help: "Maximum notes to show in list mode")
     var limit: Int = 30
 
-    func run() throws {
+    public init() {}
+
+    public func run() throws {
         let auth = try loadAuth()
         let api = CloudKitAPI(auth: auth)
         let noteID = self.noteID

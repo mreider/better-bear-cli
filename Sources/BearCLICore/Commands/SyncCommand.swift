@@ -1,8 +1,8 @@
 import ArgumentParser
 import Foundation
 
-struct SyncCommand: ParsableCommand {
-    static let configuration = CommandConfiguration(
+public struct SyncCommand: ParsableCommand {
+    public static let configuration = CommandConfiguration(
         commandName: "sync",
         abstract: "Sync Bear notes to a local cache for fast search"
     )
@@ -13,7 +13,9 @@ struct SyncCommand: ParsableCommand {
     @Flag(name: .shortAndLong, help: "Show per-note progress")
     var verbose: Bool = false
 
-    func run() throws {
+    public init() {}
+
+    public func run() throws {
         let auth = try loadAuth()
         let api = CloudKitAPI(auth: auth)
         let force = self.full
