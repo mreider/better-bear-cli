@@ -1,8 +1,8 @@
 import ArgumentParser
 import Foundation
 
-struct AuthCommand: ParsableCommand {
-    static let configuration = CommandConfiguration(
+public struct AuthCommand: ParsableCommand {
+    public static let configuration = CommandConfiguration(
         commandName: "auth",
         abstract: "Authenticate with iCloud for Bear access"
     )
@@ -13,7 +13,9 @@ struct AuthCommand: ParsableCommand {
     @Flag(name: .long, help: "Force browser-based authentication even if already authenticated")
     var browser: Bool = false
 
-    func run() throws {
+    public init() {}
+
+    public func run() throws {
         let webAuthToken: String
 
         if let t = token {

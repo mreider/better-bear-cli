@@ -1,14 +1,14 @@
 import Foundation
 
-struct SyncStats {
-    var added: Int = 0
-    var updated: Int = 0
-    var deleted: Int = 0
-    var failed: Int = 0
+public struct SyncStats {
+    public var added: Int = 0
+    public var updated: Int = 0
+    public var deleted: Int = 0
+    public var failed: Int = 0
 
-    var total: Int { added + updated + deleted }
+    public var total: Int { added + updated + deleted }
 
-    var summary: String {
+    public var summary: String {
         var parts: [String] = []
         if added > 0 { parts.append("\(added) new") }
         if updated > 0 { parts.append("\(updated) updated") }
@@ -19,11 +19,15 @@ struct SyncStats {
     }
 }
 
-struct SyncEngine {
-    let api: CloudKitAPI
+public struct SyncEngine {
+    public let api: CloudKitAPI
+
+    public init(api: CloudKitAPI) {
+        self.api = api
+    }
 
     /// Main sync entry point.
-    func sync(force: Bool = false, verbose: Bool = false) async throws -> (NoteCache, SyncStats) {
+    public func sync(force: Bool = false, verbose: Bool = false) async throws -> (NoteCache, SyncStats) {
         if force || !NoteCache.exists() {
             return try await performFullSync(verbose: verbose)
         }
@@ -46,7 +50,7 @@ struct SyncEngine {
     }
 
     /// Ensure cache exists and is reasonably fresh. Used by search before querying.
-    func ensureCacheReady(verbose: Bool = false) async throws -> NoteCache {
+    public func ensureCacheReady(verbose: Bool = false) async throws -> NoteCache {
         if !NoteCache.exists() {
             if verbose { print("No local cache found. Syncing...") }
             let (cache, stats) = try await performFullSync(verbose: verbose)
@@ -184,7 +188,7 @@ struct SyncEngine {
     // MARK: - Shared Text Fetching
 
     /// Get note text from a CKRecord - tries textADP (inline) first, then asset download.
-    func fetchNoteText(from record: CKRecord) async throws -> String {
+    public func fetchNoteText(from record: CKRecord) async throws -> String {
         if let textADP = record.fields["textADP"]?.value.stringValue {
             return textADP
         }

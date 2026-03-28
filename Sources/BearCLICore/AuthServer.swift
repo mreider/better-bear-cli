@@ -7,7 +7,7 @@ import Glibc
 
 /// A minimal HTTP server that serves an Apple Sign-In page
 /// and waits for the browser to POST back a ckWebAuthToken.
-class AuthServer {
+public class AuthServer {
     private let preferredPort: UInt16 = 19222
     private let timeoutSeconds: Int = 120
     private var serverSocket: Int32 = -1
@@ -457,7 +457,7 @@ class AuthServer {
 
     // MARK: - Public Interface
 
-    func startAndWaitForToken() -> String? {
+    public func startAndWaitForToken() -> String? {
         do {
             let (sock, port) = try createServerSocket()
             serverSocket = sock
@@ -504,9 +504,9 @@ class AuthServer {
         }
     }
 
-    var port: UInt16 { actualPort }
+    public var port: UInt16 { actualPort }
 
-    func openInBrowser() {
+    public func openInBrowser() {
         let p = Process()
         p.executableURL = URL(fileURLWithPath: "/usr/bin/open")
         p.arguments = ["http://localhost:\(actualPort)/"]
@@ -514,11 +514,11 @@ class AuthServer {
     }
 }
 
-enum AuthServerError: Error, CustomStringConvertible {
+public enum AuthServerError: Error, CustomStringConvertible {
     case socketCreationFailed(String)
     case bindFailed(String)
 
-    var description: String {
+    public var description: String {
         switch self {
         case .socketCreationFailed(let msg): return "Socket creation failed: \(msg)"
         case .bindFailed(let msg): return "Bind failed: \(msg)"
