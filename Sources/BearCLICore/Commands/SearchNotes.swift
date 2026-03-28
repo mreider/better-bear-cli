@@ -1,8 +1,8 @@
 import ArgumentParser
 import Foundation
 
-struct SearchNotes: ParsableCommand {
-    static let configuration = CommandConfiguration(
+public struct SearchNotes: ParsableCommand {
+    public static let configuration = CommandConfiguration(
         commandName: "search",
         abstract: "Search Bear notes (full-text)"
     )
@@ -19,7 +19,9 @@ struct SearchNotes: ParsableCommand {
     @Flag(name: .long, help: "Skip auto-sync (use existing cache as-is)")
     var noSync: Bool = false
 
-    func run() throws {
+    public init() {}
+
+    public func run() throws {
         let auth = try loadAuth()
         let api = CloudKitAPI(auth: auth)
         let query = self.query
