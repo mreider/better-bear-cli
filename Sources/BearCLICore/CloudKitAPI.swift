@@ -362,12 +362,12 @@ public struct CloudKitAPI {
             if let user = created.userRecordName { createdDict["userRecordName"] = .string(user) }
             recordDict["created"] = .dictionary(createdDict)
         }
-        if let modified = record.modified {
-            var modifiedDict: [String: AnyCodableValue] = [:]
-            if let ts = modified.timestamp { modifiedDict["timestamp"] = .int(ts) }
-            if let user = modified.userRecordName { modifiedDict["userRecordName"] = .string(user) }
-            recordDict["modified"] = .dictionary(modifiedDict)
+        // Use current timestamp for modified metadata so CloudKit recognizes the update
+        var modifiedDict: [String: AnyCodableValue] = ["timestamp": .int(now)]
+        if let user = record.modified?.userRecordName {
+            modifiedDict["userRecordName"] = .string(user)
         }
+        recordDict["modified"] = .dictionary(modifiedDict)
 
         let operation: [String: AnyCodableValue] = [
             "operationType": .string("update"),
@@ -411,12 +411,12 @@ public struct CloudKitAPI {
             if let user = created.userRecordName { createdDict["userRecordName"] = .string(user) }
             recordDict["created"] = .dictionary(createdDict)
         }
-        if let modified = record.modified {
-            var modifiedDict: [String: AnyCodableValue] = [:]
-            if let ts = modified.timestamp { modifiedDict["timestamp"] = .int(ts) }
-            if let user = modified.userRecordName { modifiedDict["userRecordName"] = .string(user) }
-            recordDict["modified"] = .dictionary(modifiedDict)
+        // Use current timestamp for modified metadata so CloudKit recognizes the update
+        var modifiedDict: [String: AnyCodableValue] = ["timestamp": .int(now)]
+        if let user = record.modified?.userRecordName {
+            modifiedDict["userRecordName"] = .string(user)
         }
+        recordDict["modified"] = .dictionary(modifiedDict)
 
         let operation: [String: AnyCodableValue] = [
             "operationType": .string("update"),

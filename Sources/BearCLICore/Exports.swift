@@ -5,7 +5,7 @@ public struct BearCLI: ParsableCommand {
     public static let configuration = CommandConfiguration(
         commandName: "bcli",
         abstract: "CLI for Bear notes via CloudKit",
-        version: "0.3.2",
+        version: "0.3.3",
         subcommands: [
             AuthCommand.self,
             ListNotes.self,
