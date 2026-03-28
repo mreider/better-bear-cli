@@ -200,6 +200,97 @@ final class NoteCacheTests: XCTestCase {
     }
 }
 
+final class CKRecordDecodingTests: XCTestCase {
+
+    func testDecodesRecordWithFields() throws {
+        let json = """
+        {
+            "recordName": "ABC-123",
+            "recordType": "SFNote",
+            "fields": {
+                "title": { "value": "Hello", "type": "STRING" }
+            },
+            "recordChangeTag": "tag1"
+        }
+        """.data(using: .utf8)!
+
+        let record = try JSONDecoder().decode(CKRecord.self, from: json)
+
+        XCTAssertEqual(record.recordName, "ABC-123")
+        XCTAssertEqual(record.recordType, "SFNote")
+        XCTAssertEqual(record.fields["title"]?.value.stringValue, "Hello")
+        XCTAssertEqual(record.recordChangeTag, "tag1")
+    }
+
+    func testDecodesRecordWithoutFieldsKey() throws {
+        let json = """
+        {
+            "recordName": "ABC-123",
+            "recordType": "SFNote"
+        }
+        """.data(using: .utf8)!
+
+        let record = try JSONDecoder().decode(CKRecord.self, from: json)
+
+        XCTAssertEqual(record.recordName, "ABC-123")
+        XCTAssertTrue(record.fields.isEmpty)
+    }
+
+    func testDecodesRecordWithEmptyFields() throws {
+        let json = """
+        {
+            "recordName": "ABC-123",
+            "fields": {}
+        }
+        """.data(using: .utf8)!
+
+        let record = try JSONDecoder().decode(CKRecord.self, from: json)
+
+        XCTAssertEqual(record.recordName, "ABC-123")
+        XCTAssertTrue(record.fields.isEmpty)
+    }
+
+    func testDecodesDeletedRecordWithoutFields() throws {
+        let json = """
+        {
+            "recordName": "DEL-456",
+            "deleted": true
+        }
+        """.data(using: .utf8)!
+
+        let record = try JSONDecoder().decode(CKRecord.self, from: json)
+
+        XCTAssertEqual(record.recordName, "DEL-456")
+        XCTAssertEqual(record.deleted, true)
+        XCTAssertTrue(record.fields.isEmpty)
+    }
+
+    func testDecodesLookupResponseWithMixedRecords() throws {
+        let json = """
+        {
+            "records": [
+                {
+                    "recordName": "FOUND-1",
+                    "recordType": "SFNote",
+                    "fields": {
+                        "title": { "value": "My Note", "type": "STRING" }
+                    }
+                },
+                {
+                    "recordName": "NOT-FOUND-2"
+                }
+            ]
+        }
+        """.data(using: .utf8)!
+
+        let response = try JSONDecoder().decode(CKRecordLookupResponse.self, from: json)
+
+        XCTAssertEqual(response.records.count, 2)
+        XCTAssertEqual(response.records[0].fields["title"]?.value.stringValue, "My Note")
+        XCTAssertTrue(response.records[1].fields.isEmpty)
+    }
+}
+
 final class SyncStatsTests: XCTestCase {
 
     func testSummaryEmpty() {

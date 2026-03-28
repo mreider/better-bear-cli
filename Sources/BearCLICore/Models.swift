@@ -111,6 +111,21 @@ public struct CKRecord: Decodable {
     public let modified: CKTimestamp?
     public let deleted: Bool?
 
+    private enum CodingKeys: String, CodingKey {
+        case recordName, recordType, fields, recordChangeTag, created, modified, deleted
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        recordName = try container.decode(String.self, forKey: .recordName)
+        recordType = try container.decodeIfPresent(String.self, forKey: .recordType)
+        fields = try container.decodeIfPresent([String: CKRecordField].self, forKey: .fields) ?? [:]
+        recordChangeTag = try container.decodeIfPresent(String.self, forKey: .recordChangeTag)
+        created = try container.decodeIfPresent(CKTimestamp.self, forKey: .created)
+        modified = try container.decodeIfPresent(CKTimestamp.self, forKey: .modified)
+        deleted = try container.decodeIfPresent(Bool.self, forKey: .deleted)
+    }
+
     public init(
         recordName: String,
         recordType: String? = nil,

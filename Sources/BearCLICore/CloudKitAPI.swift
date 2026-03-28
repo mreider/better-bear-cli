@@ -182,7 +182,7 @@ public struct CloudKitAPI {
         )
 
         let response: CKRecordLookupResponse = try await post(path: "records/lookup", body: request)
-        return response.records
+        return response.records.filter { !$0.fields.isEmpty }
     }
 
     // MARK: - Download Asset (note text)
