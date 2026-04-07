@@ -2,22 +2,22 @@ import Foundation
 
 // MARK: - Cached Note
 
-struct CachedNote: Codable {
-    let recordName: String
-    let uniqueIdentifier: String
-    let title: String
-    let tags: [String]
-    let pinned: Bool
-    let archived: Bool
-    let trashed: Bool
-    let locked: Bool
-    let creationDate: Date?
-    let modificationDate: Date?
-    let recordChangeTag: String?
-    let text: String
-    let hasFiles: Bool
+public struct CachedNote: Codable {
+    public let recordName: String
+    public let uniqueIdentifier: String
+    public let title: String
+    public let tags: [String]
+    public let pinned: Bool
+    public let archived: Bool
+    public let trashed: Bool
+    public let locked: Bool
+    public let creationDate: Date?
+    public let modificationDate: Date?
+    public let recordChangeTag: String?
+    public let text: String
+    public let hasFiles: Bool
 
-    init(from record: CKRecord, text: String) {
+    public init(from record: CKRecord, text: String) {
         self.recordName = record.recordName
         self.uniqueIdentifier = record.fields["uniqueIdentifier"]?.value.stringValue ?? record.recordName
         self.title = record.fields["title"]?.value.stringValue ?? "(untitled)"
@@ -53,34 +53,40 @@ struct CachedNote: Codable {
 
 // MARK: - Note Cache
 
-struct NoteCache: Codable {
-    var syncToken: String?
-    var lastSyncDate: Date?
-    var notes: [String: CachedNote] // keyed by recordName
+public struct NoteCache: Codable {
+    public var syncToken: String?
+    public var lastSyncDate: Date?
+    public var notes: [String: CachedNote] // keyed by recordName
 
-    static let staleThresholdSeconds: TimeInterval = 300 // 5 minutes
+    public init(syncToken: String? = nil, lastSyncDate: Date? = nil, notes: [String: CachedNote] = [:]) {
+        self.syncToken = syncToken
+        self.lastSyncDate = lastSyncDate
+        self.notes = notes
+    }
 
-    static var cacheFile: URL {
+    public static let staleThresholdSeconds: TimeInterval = 300 // 5 minutes
+
+    public static var cacheFile: URL {
         AuthConfig.configDir.appendingPathComponent("cache.json")
     }
 
-    static func exists() -> Bool {
+    public static func exists() -> Bool {
         FileManager.default.fileExists(atPath: cacheFile.path)
     }
 
-    var isStale: Bool {
+    public var isStale: Bool {
         guard let lastSync = lastSyncDate else { return true }
         return Date().timeIntervalSince(lastSync) > Self.staleThresholdSeconds
     }
 
-    static func load() throws -> NoteCache {
+    public static func load() throws -> NoteCache {
         let data = try Data(contentsOf: cacheFile)
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return try decoder.decode(NoteCache.self, from: data)
     }
 
-    func save() throws {
+    public func save() throws {
         let dir = AuthConfig.configDir
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 
@@ -94,22 +100,22 @@ struct NoteCache: Codable {
         _ = try FileManager.default.replaceItemAt(Self.cacheFile, withItemAt: tmpFile)
     }
 
-    mutating func upsert(_ note: CachedNote) {
+    public mutating func upsert(_ note: CachedNote) {
         notes[note.recordName] = note
     }
 
-    mutating func remove(recordName: String) {
+    public mutating func remove(recordName: String) {
         notes.removeValue(forKey: recordName)
     }
 
     /// Upsert from a CKRecord returned after a CLI write operation.
-    mutating func upsertFromRecord(_ record: CKRecord, text: String) {
+    public mutating func upsertFromRecord(_ record: CKRecord, text: String) {
         let cached = CachedNote(from: record, text: text)
         notes[record.recordName] = cached
     }
 
     /// Mark a note as trashed in the cache.
-    mutating func markTrashed(recordName: String) {
+    public mutating func markTrashed(recordName: String) {
         guard let existing = notes[recordName] else { return }
         // Re-create with trashed flag - CachedNote is a value type
         let trashed = CachedNote(
@@ -134,7 +140,7 @@ struct NoteCache: Codable {
 // MARK: - CachedNote memberwise init (for markTrashed)
 
 extension CachedNote {
-    init(
+    public init(
         recordName: String,
         uniqueIdentifier: String,
         title: String,

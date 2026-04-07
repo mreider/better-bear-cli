@@ -1,8 +1,8 @@
 import ArgumentParser
 import Foundation
 
-struct TrashNote: ParsableCommand {
-    static let configuration = CommandConfiguration(
+public struct TrashNote: ParsableCommand {
+    public static let configuration = CommandConfiguration(
         commandName: "trash",
         abstract: "Move a Bear note to trash"
     )
@@ -13,7 +13,9 @@ struct TrashNote: ParsableCommand {
     @Flag(name: .long, help: "Skip confirmation prompt")
     var force: Bool = false
 
-    func run() throws {
+    public init() {}
+
+    public func run() throws {
         let auth = try loadAuth()
         let api = CloudKitAPI(auth: auth)
         let noteID = self.noteID

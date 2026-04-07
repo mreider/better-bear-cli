@@ -1,8 +1,8 @@
 import ArgumentParser
 import Foundation
 
-struct ListTags: ParsableCommand {
-    static let configuration = CommandConfiguration(
+public struct ListTags: ParsableCommand {
+    public static let configuration = CommandConfiguration(
         commandName: "tags",
         abstract: "List all Bear tags"
     )
@@ -13,7 +13,9 @@ struct ListTags: ParsableCommand {
     @Flag(name: .long, help: "Output as JSON")
     var json: Bool = false
 
-    func run() throws {
+    public init() {}
+
+    public func run() throws {
         let auth = try loadAuth()
         let api = CloudKitAPI(auth: auth)
         let flat = self.flat
