@@ -13,6 +13,20 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute next version
+        id: version
+        run: |
+          latest=$(git tag --list 'v*' --sort=-v:refname | head -n1)
+          if [ -z "$latest" ]; then
+            echo "tag=v0.1.0" >> "$GITHUB_OUTPUT"
+          else
+            patch=$(echo "$latest" | sed 's/v[0-9]*\.[0-9]*\.//')
+            prefix=$(echo "$latest" | sed 's/\.[0-9]*$//')
+            echo "tag=${prefix}.$((patch + 1))" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build release binary
         run: swift build -c release --arch arm64 --arch x86_64
@@ -24,16 +38,12 @@ jobs:
           cd dist && tar czf bcli-macos-universal.tar.gz bcli
           shasum -a 256 bcli-macos-universal.tar.gz > bcli-macos-universal.tar.gz.sha256
 
-      - name: Update latest release
+      - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: latest
-          name: Latest Build
-          prerelease: true
-          make_latest: false
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
           files: |
             dist/bcli-macos-universal.tar.gz
             dist/bcli-macos-universal.tar.gz.sha256
-          body: |
-            Rolling build from the latest merge to main.
-            Commit: ${{ github.sha }}
+          generate_release_notes: true
