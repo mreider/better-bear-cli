@@ -219,3 +219,76 @@ final class SyncStatsTests: XCTestCase {
         XCTAssertTrue(stats.summary.contains("2 deleted"))
     }
 }
+
+final class CKModifyResponseTests: XCTestCase {
+
+    func testSuccessfulResult() throws {
+        let json = """
+        {
+            "records": [{
+                "recordName": "note-1",
+                "recordType": "SFNote",
+                "fields": {
+                    "title": {"value": "Test", "type": "STRING"}
+                },
+                "recordChangeTag": "abc123"
+            }]
+        }
+        """.data(using: .utf8)!
+
+        let response = try JSONDecoder().decode(CKModifyResponse.self, from: json)
+        XCTAssertEqual(response.records.count, 1)
+        XCTAssertFalse(response.records[0].isError)
+        XCTAssertNotNil(response.records[0].toRecord())
+        XCTAssertEqual(response.records[0].toRecord()?.recordName, "note-1")
+    }
+
+    func testErrorResult() throws {
+        let json = """
+        {
+            "records": [{
+                "recordName": "note-1",
+                "serverErrorCode": "CONFLICT",
+                "reason": "record changed by another device"
+            }]
+        }
+        """.data(using: .utf8)!
+
+        let response = try JSONDecoder().decode(CKModifyResponse.self, from: json)
+        XCTAssertEqual(response.records.count, 1)
+        XCTAssertTrue(response.records[0].isError)
+        XCTAssertEqual(response.records[0].serverErrorCode, "CONFLICT")
+        XCTAssertEqual(response.records[0].reason, "record changed by another device")
+        XCTAssertNil(response.records[0].toRecord())
+    }
+
+    func testMixedResults() throws {
+        let json = """
+        {
+            "records": [
+                {
+                    "recordName": "note-1",
+                    "recordType": "SFNote",
+                    "fields": {},
+                    "recordChangeTag": "tag1"
+                },
+                {
+                    "recordName": "note-2",
+                    "serverErrorCode": "CONFLICT",
+                    "reason": "stale change tag"
+                }
+            ]
+        }
+        """.data(using: .utf8)!
+
+        let response = try JSONDecoder().decode(CKModifyResponse.self, from: json)
+        XCTAssertEqual(response.records.count, 2)
+
+        let successes = response.records.compactMap { $0.toRecord() }
+        let errors = response.records.filter { $0.isError }
+
+        XCTAssertEqual(successes.count, 1)
+        XCTAssertEqual(errors.count, 1)
+        XCTAssertEqual(errors[0].recordName, "note-2")
+    }
+}
