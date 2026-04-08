@@ -24,57 +24,121 @@ public class AuthServer {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>bcli - Sign In</title>
-            <link rel="icon" href="data:,">
+            <link rel="icon" type="image/png" href="/favicon.ico">
             <style>
                 * { margin: 0; padding: 0; box-sizing: border-box; }
                 body {
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    background: linear-gradient(135deg, #fdf2f0 0%, #fce8e4 50%, #f5d5cf 100%);
+                    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+                    background: #1d1d1f;
                     min-height: 100vh;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    color: #333;
+                    color: #d1d1d6;
                 }
                 .container {
-                    background: white;
-                    border-radius: 16px;
-                    padding: 48px;
-                    max-width: 480px;
+                    background: #2c2c2e;
+                    border-radius: 14px;
+                    padding: 48px 44px;
+                    max-width: 400px;
                     width: 90%;
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+                    box-shadow: 0 2px 20px rgba(0,0,0,0.35);
                     text-align: center;
                 }
-                h1 { font-size: 24px; font-weight: 600; margin-bottom: 8px; color: #1a1a1a; }
-                .subtitle { font-size: 15px; color: #666; margin-bottom: 32px; line-height: 1.5; }
-                #apple-sign-in-button { min-height: 44px; display: flex; justify-content: center; }
+                .bear-icon {
+                    width: 64px; height: 64px; margin: 0 auto 20px;
+                    border-radius: 14px;
+                }
+                h1 {
+                    font-size: 20px; font-weight: 600; margin-bottom: 6px;
+                    color: #f5f5f7; letter-spacing: -0.2px;
+                }
+                .subtitle {
+                    font-size: 13px; color: #98989d; margin-bottom: 28px;
+                    line-height: 1.5;
+                }
+                #apple-sign-in-button {
+                    position: absolute; width: 1px; height: 1px;
+                    overflow: hidden; opacity: 0; pointer-events: none;
+                }
+                .custom-apple-btn {
+                    display: inline-flex; align-items: center; justify-content: center;
+                    gap: 8px; padding: 0 24px; height: 44px;
+                    background: #fff; color: #1d1d1f; border: none; border-radius: 8px;
+                    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+                    font-size: 15px; font-weight: 500; cursor: pointer;
+                    transition: opacity 0.15s;
+                }
+                .custom-apple-btn:hover { opacity: 0.88; }
+                .custom-apple-btn svg { flex-shrink: 0; }
                 #apple-sign-out-button { display: none; }
-                .status { margin-top: 24px; font-size: 14px; color: #666; min-height: 20px; }
-                .status.error { color: #d32f2f; }
-                .status.success { color: #2e7d32; }
+                .status {
+                    margin-top: 20px; font-size: 13px; color: #98989d;
+                    min-height: 20px;
+                }
+                .status.error { color: #ff6961; }
+                .status.success {
+                    color: #d4a853;
+                    font-weight: 500;
+                }
                 .manual {
-                    display: none; margin-top: 24px; padding: 20px; background: #f5f5f5;
-                    border-radius: 8px; text-align: left; font-size: 13px; line-height: 1.6;
+                    display: none; margin-top: 24px; padding: 18px;
+                    background: #1d1d1f; border: 1px solid #3a3a3c;
+                    border-radius: 10px; text-align: left;
+                    font-size: 12px; line-height: 1.6; color: #98989d;
                 }
-                .manual ol { margin: 12px 0 12px 20px; }
-                .manual code { background: #e8e8e8; padding: 2px 6px; border-radius: 3px; font-size: 12px; }
+                .manual strong { color: #d1d1d6; }
+                .manual ol { margin: 10px 0 10px 18px; }
+                .manual a { color: #d4a853; text-decoration: none; }
+                .manual a:hover { text-decoration: underline; }
+                .manual code {
+                    background: #3a3a3c; padding: 2px 6px;
+                    border-radius: 4px; font-size: 11px; color: #d1d1d6;
+                }
                 .manual input {
-                    width: 100%; font-family: monospace; font-size: 12px;
-                    border: 1px solid #ddd; border-radius: 4px; padding: 8px; margin-top: 8px;
+                    width: 100%; font-family: 'SF Mono', SFMono-Regular, Menlo, monospace;
+                    font-size: 11px; background: #3a3a3c; color: #f5f5f7;
+                    border: 1px solid #48484a; border-radius: 6px;
+                    padding: 8px 10px; margin-top: 8px;
+                    outline: none; transition: border-color 0.15s;
                 }
+                .manual input:focus { border-color: #d4a853; }
                 .manual button {
-                    margin-top: 8px; padding: 8px 16px; background: #333; color: white;
-                    border: none; border-radius: 6px; font-size: 13px; cursor: pointer;
+                    margin-top: 8px; padding: 8px 18px;
+                    background: #d4a853; color: #1d1d1f;
+                    border: none; border-radius: 6px;
+                    font-size: 12px; font-weight: 600; cursor: pointer;
+                    transition: opacity 0.15s;
                 }
+                .manual button:hover { opacity: 0.85; }
                 .debug { display: none; }
             </style>
         </head>
         <body>
             <div class="container">
+                <img class="bear-icon" src="/icon" alt="Bear" />
                 <h1>bcli Authentication</h1>
                 <p class="subtitle">Sign in with your Apple ID to connect to your Bear notes via iCloud.</p>
+                <button class="custom-apple-btn" id="custom-apple-btn" style="display:none" onclick="document.querySelector('#apple-sign-in-button .apple-auth-button').click()">
+                    <svg width="16" height="19" viewBox="0 0 16 19" fill="none"><path d="M13.2 9.94c-.02-2.08 1.7-3.08 1.78-3.13-1-1.4-2.5-1.6-3.02-1.62-1.27-.13-2.52.76-3.17.76-.67 0-1.68-.74-2.77-.72A4.08 4.08 0 002.57 7.4c-1.5 2.58-.38 6.38 1.05 8.47.72 1.02 1.56 2.17 2.67 2.13 1.08-.04 1.49-.69 2.79-.69 1.29 0 1.66.69 2.78.66 1.16-.02 1.88-1.03 2.58-2.06.83-1.18 1.16-2.34 1.18-2.4-.03-.01-2.24-.85-2.26-3.4l-.14.83zM10.93 3.52A3.75 3.75 0 0011.8.5a3.86 3.86 0 00-2.5 1.3 3.6 3.6 0 00-.9 2.9 3.2 3.2 0 002.53-1.18z" fill="#1d1d1f"/></svg>
+                    Sign in with Apple
+                </button>
                 <div id="apple-sign-in-button"></div>
                 <div id="apple-sign-out-button"></div>
+                <script>
+                // Show our custom button once CloudKit JS renders the real (hidden) one
+                (function() {
+                    var btn = document.getElementById('apple-sign-in-button');
+                    var custom = document.getElementById('custom-apple-btn');
+                    var obs = new MutationObserver(function() {
+                        if (btn.querySelector('.apple-auth-button')) {
+                            obs.disconnect();
+                            custom.style.display = 'inline-flex';
+                        }
+                    });
+                    obs.observe(btn, {childList: true, subtree: true});
+                })();
+                </script>
                 <p class="status" id="status">Loading CloudKit JS...</p>
                 <div class="manual" id="manual">
                     <strong>Manual token flow:</strong>
@@ -164,9 +228,25 @@ public class AuthServer {
                             body: JSON.stringify({token: token})
                         });
                         if (r.ok) {
-                            setStatus('Authenticated! You can close this tab.', 'success');
+                            document.getElementById('custom-apple-btn').style.display = 'none';
                             document.getElementById('apple-sign-in-button').style.display = 'none';
                             document.getElementById('manual').style.display = 'none';
+                            var countdown = 5;
+                            setStatus('Authenticated! Closing in ' + countdown + 's...', 'success');
+                            var timer = setInterval(function() {
+                                countdown--;
+                                if (countdown <= 0) {
+                                    clearInterval(timer);
+                                    setStatus('Authenticated! Closing...', 'success');
+                                    window.close();
+                                    // window.close() may be blocked — update text as fallback
+                                    setTimeout(function() {
+                                        setStatus('Authenticated! You can close this tab.', 'success');
+                                    }, 500);
+                                } else {
+                                    setStatus('Authenticated! Closing in ' + countdown + 's...', 'success');
+                                }
+                            }, 1000);
                             return true;
                         }
                     } catch(e) { log('Callback fetch failed: ' + e); }
@@ -247,7 +327,7 @@ public class AuthServer {
                                 apiTokenAuth: {
                                     apiToken: 'ce59f955ec47e744f720aa1d2816a4e985e472d8b859b6c7a47b81fd36646307',
                                     persist: false,
-                                    signInButton: { id: 'apple-sign-in-button', theme: 'black' },
+                                    signInButton: { id: 'apple-sign-in-button', theme: 'white' },
                                     signOutButton: { id: 'apple-sign-out-button' }
                                 },
                                 environment: 'production'
@@ -286,6 +366,38 @@ public class AuthServer {
         </body>
         </html>
         """
+    }
+
+    // MARK: - Bear Icon
+
+    private var cachedIcon: Data?
+
+    /// Load Bear's app icon from the installed app bundle.
+    /// Converts the .icns to a 128x128 PNG via sips (built into macOS).
+    /// Caches the result for subsequent requests.
+    private func loadBearIcon() -> Data? {
+        if let cached = cachedIcon { return cached }
+
+        let icnsPath = "/Applications/Bear.app/Contents/Resources/AppIcon-26.icns"
+        guard FileManager.default.fileExists(atPath: icnsPath) else { return nil }
+
+        let tmpPng = NSTemporaryDirectory() + "bcli-bear-icon.png"
+        let proc = Process()
+        proc.executableURL = URL(fileURLWithPath: "/usr/bin/sips")
+        proc.arguments = ["-s", "format", "png", "-z", "128", "128", icnsPath, "--out", tmpPng]
+        proc.standardOutput = FileHandle.nullDevice
+        proc.standardError = FileHandle.nullDevice
+        do {
+            try proc.run()
+            proc.waitUntilExit()
+            guard proc.terminationStatus == 0 else { return nil }
+            let data = try Data(contentsOf: URL(fileURLWithPath: tmpPng))
+            try? FileManager.default.removeItem(atPath: tmpPng)
+            cachedIcon = data
+            return data
+        } catch {
+            return nil
+        }
     }
 
     // MARK: - Socket Server
@@ -381,6 +493,26 @@ public class AuthServer {
         return (String(tokens[0]), String(tokens[1]), body)
     }
 
+    private func respondData(_ sock: Int32, status: Int, statusText: String, contentType: String, body: Data) {
+        var header = "HTTP/1.1 \(status) \(statusText)\r\n"
+        header += "Content-Type: \(contentType)\r\n"
+        header += "Content-Length: \(body.count)\r\n"
+        header += "Cache-Control: public, max-age=3600\r\n"
+        header += "Connection: close\r\n"
+        header += "\r\n"
+        var data = Data(header.utf8)
+        data.append(body)
+        data.withUnsafeBytes { buf in
+            guard let ptr = buf.baseAddress else { return }
+            var sent = 0
+            while sent < data.count {
+                let n = Darwin.send(sock, ptr.advanced(by: sent), data.count - sent, 0)
+                if n <= 0 { break }
+                sent += n
+            }
+        }
+    }
+
     private func respond(_ sock: Int32, status: Int, statusText: String, contentType: String, body: String) {
         var r = "HTTP/1.1 \(status) \(statusText)\r\n"
         r += "Content-Type: \(contentType)\r\n"
@@ -422,9 +554,23 @@ public class AuthServer {
             respond(clientSocket, status: 200, statusText: "OK",
                     contentType: "text/html; charset=utf-8", body: authHTML())
 
+        case ("GET", "/icon"):
+            if let iconData = loadBearIcon() {
+                respondData(clientSocket, status: 200, statusText: "OK",
+                            contentType: "image/png", body: iconData)
+            } else {
+                respond(clientSocket, status: 404, statusText: "Not Found",
+                        contentType: "text/plain", body: "")
+            }
+
         case ("GET", "/favicon.ico"):
-            respond(clientSocket, status: 204, statusText: "No Content",
-                    contentType: "text/plain", body: "")
+            if let iconData = loadBearIcon() {
+                respondData(clientSocket, status: 200, statusText: "OK",
+                            contentType: "image/png", body: iconData)
+            } else {
+                respond(clientSocket, status: 204, statusText: "No Content",
+                        contentType: "text/plain", body: "")
+            }
 
         case ("GET", "/health"):
             respond(clientSocket, status: 200, statusText: "OK",
@@ -439,6 +585,9 @@ public class AuthServer {
                 tokenLock.unlock()
                 respond(clientSocket, status: 200, statusText: "OK",
                         contentType: "application/json", body: "{\"status\":\"ok\"}")
+                // Delay shutdown so the browser receives the response and
+                // the countdown JS can run before the CLI process exits.
+                Thread.sleep(forTimeInterval: 6.0)
                 shouldStop = true
             } else {
                 respond(clientSocket, status: 400, statusText: "Bad Request",
