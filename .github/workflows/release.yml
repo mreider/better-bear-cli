@@ -14,6 +14,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set version from tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          sed -i '' "s/version: \".*\"/version: \"$VERSION\"/" Sources/BearCLICore/Exports.swift
+
       - name: Build release binary
         run: swift build -c release --arch arm64 --arch x86_64
 
