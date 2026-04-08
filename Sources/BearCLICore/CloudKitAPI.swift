@@ -213,8 +213,19 @@ public struct CloudKitAPI {
             "zoneID": .dictionary(["zoneName": .string("Notes")]),
         ]
 
-        let response: CKRecordQueryResponse = try await post(path: "records/modify", body: body)
-        return response.records
+        let response: CKModifyResponse = try await post(path: "records/modify", body: body)
+
+        // Check for per-record errors (conflicts, etc.)
+        let errors = response.records.filter { $0.isError }
+        if let first = errors.first {
+            throw BearCLIError.recordError(
+                recordName: first.recordName,
+                serverErrorCode: first.serverErrorCode ?? "UNKNOWN",
+                reason: first.reason ?? "No reason provided"
+            )
+        }
+
+        return response.records.compactMap { $0.toRecord() }
     }
 
     /// Create a new note. Returns the created CKRecord.
@@ -611,6 +622,7 @@ public enum BearCLIError: Error, CustomStringConvertible {
     case networkError(String)
     case invalidURL(String)
     case noteNotFound(String)
+    case recordError(recordName: String, serverErrorCode: String, reason: String)
 
     public var description: String {
         switch self {
@@ -626,6 +638,8 @@ public enum BearCLIError: Error, CustomStringConvertible {
             return "Invalid URL: \(url)"
         case .noteNotFound(let id):
             return "Note not found: \(id)"
+        case .recordError(let recordName, let code, let reason):
+            return "CloudKit record error on \(recordName): \(code) — \(reason)"
         }
     }
 }
