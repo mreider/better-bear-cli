@@ -1,0 +1,39 @@
+name: Build on Merge
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build release binary
+        run: swift build -c release --arch arm64 --arch x86_64
+
+      - name: Package binary
+        run: |
+          mkdir -p dist
+          cp .build/apple/Products/Release/bcli dist/bcli
+          cd dist && tar czf bcli-macos-universal.tar.gz bcli
+          shasum -a 256 bcli-macos-universal.tar.gz > bcli-macos-universal.tar.gz.sha256
+
+      - name: Update latest release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest Build
+          prerelease: true
+          make_latest: false
+          files: |
+            dist/bcli-macos-universal.tar.gz
+            dist/bcli-macos-universal.tar.gz.sha256
+          body: |
+            Rolling build from the latest merge to main.
+            Commit: ${{ github.sha }}
