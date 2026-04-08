@@ -542,66 +542,15 @@ public struct CloudKitAPI {
 
     // MARK: - Vector Clock Helpers
 
-    /// Create a fresh vector clock for a new record.
+    /// Create a fresh vector clock for a new record (used only for note creation).
     private func makeVectorClock(device: String, counter: Int) -> String {
-        // Minimal binary plist: { "Bear CLI": counter }
-        // The format Bear uses is a bplist00 with the device name and an int counter.
-        // We replicate the exact pattern from Bear Web's output.
-        var data = Data()
-        // bplist00 header
-        data.append(contentsOf: [0x62, 0x70, 0x6C, 0x69, 0x73, 0x74, 0x30, 0x30])
-        // ASCII string object (type 0x50 + length)
-        let deviceBytes = Array(device.utf8)
-        data.append(UInt8(0x50 | (deviceBytes.count & 0x0F)))
-        data.append(contentsOf: deviceBytes)
-        // Int object (type 0x10 + value)
-        data.append(0x10)
-        data.append(UInt8(counter & 0xFF))
-        // Offset table and trailer (simplified)
-        let obj0Offset: UInt8 = 8
-        let obj1Offset = obj0Offset + 1 + UInt8(deviceBytes.count)
-        // Dict with 1 entry: key=obj0, value=obj1
-        data.append(0xD1) // dict with 1 entry
-        data.append(0x00) // key index
-        data.append(0x01) // value index
-        // Offset table
-        let offsetTableOffset = data.count
-        data.append(obj0Offset)
-        data.append(obj1Offset)
-        data.append(obj1Offset + 2) // dict offset
-        // Trailer (32 bytes)
-        data.append(contentsOf: [UInt8](repeating: 0, count: 18))
-        data.append(0x01) // offsetIntSize
-        data.append(0x01) // objectRefSize
-        data.append(contentsOf: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03]) // numObjects
-        data.append(contentsOf: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02]) // topObject index
-        let otBytes = withUnsafeBytes(of: UInt64(offsetTableOffset).bigEndian) { Array($0) }
-        data.append(contentsOf: otBytes)
-        return data.base64EncodedString()
+        let clock: [String: Int] = [device: counter]
+        return VectorClock.encode(clock)
     }
 
     /// Increment the counter in an existing vector clock, or create a fresh one.
     private func incrementVectorClock(_ base64: String) -> String {
-        // The clock is a bplist with {"Device Name": counter}.
-        // We create a new clock with "Bear CLI" and counter = extracted + 1.
-        // If we can't parse the existing clock, preserve it unchanged to avoid
-        // creating a conflict that causes Bear desktop to reject the update.
-        guard let data = Data(base64Encoded: base64), data.count > 20 else {
-            return makeVectorClock(device: "Bear CLI", counter: 1)
-        }
-
-        // Try to find the counter byte (it follows 0x10 pattern)
-        // The counter is typically near the device name, encoded as 0x10 + byte
-        for i in 9..<(data.count - 20) {
-            if data[i] == 0x10 {
-                let currentCounter = Int(data[i + 1])
-                return makeVectorClock(device: "Bear CLI", counter: currentCounter + 1)
-            }
-        }
-
-        // Could not parse the clock — return it unchanged rather than resetting
-        // to counter=1, which would look like a conflict to other Bear clients
-        return base64
+        return VectorClock.increment(base64, device: "Bear CLI")
     }
 
     // MARK: - Zone Changes (incremental sync)
