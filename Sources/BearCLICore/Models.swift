@@ -102,6 +102,44 @@ public struct CKRecordLookupResponse: Decodable {
     public let records: [CKRecord]
 }
 
+/// Response from CloudKit /records/modify endpoint.
+/// Each record entry may be a success (with fields) or a per-record error
+/// (with serverErrorCode and reason). We parse both.
+public struct CKModifyResponse: Decodable {
+    public let records: [CKModifyRecordResult]
+}
+
+public struct CKModifyRecordResult: Decodable {
+    public let recordName: String
+    public let recordType: String?
+    public let fields: [String: CKRecordField]?
+    public let recordChangeTag: String?
+    public let created: CKTimestamp?
+    public let modified: CKTimestamp?
+    public let deleted: Bool?
+    // Per-record error fields returned by CloudKit on conflict/failure
+    public let serverErrorCode: String?
+    public let reason: String?
+
+    public var isError: Bool {
+        serverErrorCode != nil
+    }
+
+    /// Convert a successful result into a CKRecord.
+    public func toRecord() -> CKRecord? {
+        guard !isError else { return nil }
+        return CKRecord(
+            recordName: recordName,
+            recordType: recordType,
+            fields: fields ?? [:],
+            recordChangeTag: recordChangeTag,
+            created: created,
+            modified: modified,
+            deleted: deleted
+        )
+    }
+}
+
 public struct CKRecord: Decodable {
     public let recordName: String
     public let recordType: String?
