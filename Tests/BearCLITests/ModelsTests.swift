@@ -67,6 +67,21 @@ final class AnyCodableValueTests: XCTestCase {
     }
 }
 
+final class CKRecordDecodingTests: XCTestCase {
+
+    func testDecodesDeletedRecordWithoutFields() throws {
+        let json = """
+        {"recordName": "rec-deleted", "deleted": true}
+        """.data(using: .utf8)!
+
+        let record = try JSONDecoder().decode(CKRecord.self, from: json)
+
+        XCTAssertEqual(record.recordName, "rec-deleted")
+        XCTAssertEqual(record.deleted, true)
+        XCTAssertTrue(record.fields.isEmpty)
+    }
+}
+
 final class BearNoteTests: XCTestCase {
 
     func testNoteFromRecord() {
