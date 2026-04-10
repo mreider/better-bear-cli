@@ -585,9 +585,6 @@ public class AuthServer {
                 tokenLock.unlock()
                 respond(clientSocket, status: 200, statusText: "OK",
                         contentType: "application/json", body: "{\"status\":\"ok\"}")
-                // Delay shutdown so the browser receives the response and
-                // the countdown JS can run before the CLI process exits.
-                Thread.sleep(forTimeInterval: 6.0)
                 shouldStop = true
             } else {
                 respond(clientSocket, status: 400, statusText: "Bad Request",
