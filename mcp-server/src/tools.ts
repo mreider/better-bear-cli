@@ -1,0 +1,306 @@
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+
+export interface ToolHandler {
+  tool: Tool;
+  buildArgs: (input: Record<string, unknown>) => string[];
+  usesStdin?: (input: Record<string, unknown>) => string | null;
+}
+
+export const tools: Record<string, ToolHandler> = {
+  bear_list_notes: {
+    tool: {
+      name: "bear_list_notes",
+      description:
+        "List Bear notes with optional tag filtering. Returns an array of notes with IDs, titles, tags, pin status, and modification dates. Use bear_get_note to read the full content of a specific note.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          tag: {
+            type: "string",
+            description: "Filter notes by tag (partial match)",
+          },
+          include_archived: {
+            type: "boolean",
+            description: "Include archived notes in results",
+          },
+          include_trashed: {
+            type: "boolean",
+            description: "Include trashed notes in results",
+          },
+          limit: {
+            type: "number",
+            description:
+              "Maximum number of notes to return (default 30)",
+          },
+        },
+      },
+    },
+    buildArgs: (input) => {
+      const args = ["ls", "--json"];
+      if (input.tag) args.push("--tag", String(input.tag));
+      if (input.include_archived) args.push("--archived");
+      if (input.include_trashed) args.push("--trashed");
+      if (input.limit) args.push("--limit", String(input.limit));
+      return args;
+    },
+  },
+
+  bear_get_note: {
+    tool: {
+      name: "bear_get_note",
+      description:
+        "Get a single Bear note's full content and metadata by ID. Returns the note title, tags, full markdown text, and dates. Use the 'raw' option to get just the markdown without metadata.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          id: {
+            type: "string",
+            description: "Note ID (uniqueIdentifier)",
+          },
+          raw: {
+            type: "boolean",
+            description: "Return only the raw markdown content",
+          },
+        },
+        required: ["id"],
+      },
+    },
+    buildArgs: (input) => {
+      const args = ["get", String(input.id), "--json"];
+      if (input.raw) args.push("--raw");
+      return args;
+    },
+  },
+
+  bear_search: {
+    tool: {
+      name: "bear_search",
+      description:
+        "Full-text search across Bear note titles, tags, and body content. Returns matching notes ranked by relevance (title matches first, then tag, then body). Body matches include a text snippet with surrounding context.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          query: {
+            type: "string",
+            description: "Search query text",
+          },
+          limit: {
+            type: "number",
+            description: "Maximum number of results (default 20)",
+          },
+        },
+        required: ["query"],
+      },
+    },
+    buildArgs: (input) => {
+      const args = ["search", String(input.query), "--json"];
+      if (input.limit) args.push("--limit", String(input.limit));
+      return args;
+    },
+  },
+
+  bear_get_tags: {
+    tool: {
+      name: "bear_get_tags",
+      description:
+        "Get the full tag hierarchy from Bear. Returns all tags with their note counts and pin status. Useful for understanding how notes are organized.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {},
+      },
+    },
+    buildArgs: () => ["tags", "--json"],
+  },
+
+  bear_create_note: {
+    tool: {
+      name: "bear_create_note",
+      description:
+        "Create a new Bear note with a title, optional body text, and optional tags. The note will sync to Bear on all devices via iCloud. Returns the new note's ID.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          title: {
+            type: "string",
+            description: "Note title",
+          },
+          body: {
+            type: "string",
+            description: "Note body text (markdown)",
+          },
+          tags: {
+            type: "array",
+            items: { type: "string" },
+            description: "Tags to assign to the note",
+          },
+        },
+        required: ["title"],
+      },
+    },
+    buildArgs: (input) => {
+      const args = ["create", String(input.title), "--json"];
+      if (input.body) args.push("--body", String(input.body));
+      if (Array.isArray(input.tags) && input.tags.length > 0) {
+        args.push("--tags", input.tags.join(","));
+      }
+      return args;
+    },
+  },
+
+  bear_edit_note: {
+    tool: {
+      name: "bear_edit_note",
+      description:
+        "Edit an existing Bear note. Provide either 'append_text' to add text to the end of the note, or 'body' to replace the entire note content. Exactly one must be specified.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          id: {
+            type: "string",
+            description: "Note ID (uniqueIdentifier)",
+          },
+          append_text: {
+            type: "string",
+            description: "Text to append to the end of the note",
+          },
+          body: {
+            type: "string",
+            description:
+              "New content to replace the entire note body",
+          },
+        },
+        required: ["id"],
+      },
+    },
+    buildArgs: (input) => {
+      if (input.append_text) {
+        return [
+          "edit",
+          String(input.id),
+          "--append",
+          String(input.append_text),
+          "--json",
+        ];
+      }
+      // --stdin case handled separately via usesStdin
+      return ["edit", String(input.id), "--stdin", "--json"];
+    },
+    usesStdin: (input) => {
+      if (input.body && !input.append_text) {
+        return String(input.body);
+      }
+      return null;
+    },
+  },
+
+  bear_trash_note: {
+    tool: {
+      name: "bear_trash_note",
+      description:
+        "Move a Bear note to the trash. This is a soft delete — the note can be recovered from Bear's trash. The note is identified by its ID.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          id: {
+            type: "string",
+            description: "Note ID (uniqueIdentifier)",
+          },
+        },
+        required: ["id"],
+      },
+    },
+    buildArgs: (input) => ["trash", String(input.id), "--json"],
+  },
+
+  bear_sync: {
+    tool: {
+      name: "bear_sync",
+      description:
+        "Trigger a sync of Bear notes from iCloud. Normally an incremental sync fetching only changes. Use 'full' to force a complete re-sync. Most read operations auto-sync when the cache is stale, so manual sync is rarely needed.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          full: {
+            type: "boolean",
+            description: "Force a full re-sync instead of incremental",
+          },
+        },
+      },
+    },
+    buildArgs: (input) => {
+      const args = ["sync", "--json"];
+      if (input.full) args.push("--full");
+      return args;
+    },
+  },
+
+  bear_list_todos: {
+    tool: {
+      name: "bear_list_todos",
+      description:
+        "List Bear notes that have incomplete TODO items (markdown checkboxes like '- [ ]'). Returns each note's title, tags, and counts of complete/incomplete items.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          limit: {
+            type: "number",
+            description: "Maximum number of notes to return (default 30)",
+          },
+        },
+      },
+    },
+    buildArgs: (input) => {
+      const args = ["todo", "--json"];
+      if (input.limit) args.push("--limit", String(input.limit));
+      return args;
+    },
+  },
+
+  bear_get_todos: {
+    tool: {
+      name: "bear_get_todos",
+      description:
+        "Get all TODO items from a specific Bear note. Returns each item's text, completion status, and index number (use the index with bear_toggle_todo to toggle items).",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          id: {
+            type: "string",
+            description: "Note ID (uniqueIdentifier)",
+          },
+        },
+        required: ["id"],
+      },
+    },
+    buildArgs: (input) => ["todo", String(input.id), "--json"],
+  },
+
+  bear_toggle_todo: {
+    tool: {
+      name: "bear_toggle_todo",
+      description:
+        "Toggle a specific TODO item in a Bear note between complete and incomplete. The item_index is 1-based — use bear_get_todos first to see the list with index numbers.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          id: {
+            type: "string",
+            description: "Note ID (uniqueIdentifier)",
+          },
+          item_index: {
+            type: "number",
+            description: "1-based index of the TODO item to toggle",
+          },
+        },
+        required: ["id", "item_index"],
+      },
+    },
+    buildArgs: (input) => [
+      "todo",
+      String(input.id),
+      "--toggle",
+      String(input.item_index),
+      "--json",
+    ],
+  },
+};
