@@ -303,4 +303,54 @@ export const tools: Record<string, ToolHandler> = {
       "--json",
     ],
   },
+
+  bear_attach_file: {
+    tool: {
+      name: "bear_attach_file",
+      description:
+        "Attach a file or image to an existing Bear note. The file is uploaded to iCloud and embedded in the note's markdown. Supports common image formats (jpg, png, gif, webp, heic) and other file types (pdf, zip, etc.). By default the attachment is appended to the end. Use 'after' or 'before' to place it relative to text in the note, or 'prepend' to put it right after the title.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          id: {
+            type: "string",
+            description: "Note ID (uniqueIdentifier)",
+          },
+          file_path: {
+            type: "string",
+            description:
+              "Absolute path to the file to attach",
+          },
+          after: {
+            type: "string",
+            description:
+              "Insert after the line containing this text",
+          },
+          before: {
+            type: "string",
+            description:
+              "Insert before the line containing this text",
+          },
+          prepend: {
+            type: "boolean",
+            description:
+              "Insert after the title line instead of at the end",
+          },
+        },
+        required: ["id", "file_path"],
+      },
+    },
+    buildArgs: (input) => {
+      const args = [
+        "attach",
+        String(input.id),
+        String(input.file_path),
+        "--json",
+      ];
+      if (input.after) args.push("--after", String(input.after));
+      if (input.before) args.push("--before", String(input.before));
+      if (input.prepend) args.push("--prepend");
+      return args;
+    },
+  },
 };
