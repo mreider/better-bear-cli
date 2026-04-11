@@ -13,7 +13,7 @@ public struct EditNote: ParsableCommand {
     @Flag(name: .long, help: "Read new content from stdin (replaces entire note body)")
     var stdin: Bool = false
 
-    @Option(name: .long, help: "Append text to the end of the note")
+    @Option(name: .long, parsing: .unconditional, help: "Append text to the end of the note")
     var append: String?
 
     @Flag(name: .long, help: "Open in $EDITOR for interactive editing")

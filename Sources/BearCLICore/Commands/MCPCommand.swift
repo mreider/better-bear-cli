@@ -14,7 +14,7 @@ public struct MCPCommand: ParsableCommand {
 struct MCPInstall: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "install",
-        abstract: "Install Bear MCP server into Claude Desktop configuration"
+        abstract: "Install Better Bear MCP server into Claude Desktop configuration"
     )
 
     @Option(name: .long, help: "Path to the MCP server entry point (dist/index.js)")
@@ -39,7 +39,7 @@ struct MCPInstall: ParsableCommand {
         }
 
         // Add/update the bear entry
-        mcpServers["bear"] = [
+        mcpServers["better-bear-mcp"] = [
             "command": "node",
             "args": [serverPath],
         ] as [String: Any]
@@ -48,7 +48,7 @@ struct MCPInstall: ParsableCommand {
         // Write the config back
         try writeClaudeConfig(config, to: configURL)
 
-        print("Bear MCP server installed.")
+        print("Better Bear MCP server installed.")
         print("  Server: \(serverPath)")
         print("  Config: \(configURL.path)")
         print("")
@@ -81,7 +81,7 @@ struct MCPInstall: ParsableCommand {
         // 3. npm global install
         let npmRoot = runShellCommand("npm root -g")?.trimmingCharacters(in: .whitespacesAndNewlines)
         if let root = npmRoot {
-            let npmPath = (root as NSString).appendingPathComponent("bear-mcp-server/dist/index.js")
+            let npmPath = (root as NSString).appendingPathComponent("better-bear-mcp/dist/index.js")
             if FileManager.default.fileExists(atPath: npmPath) {
                 return npmPath
             }
@@ -112,7 +112,7 @@ struct MCPInstall: ParsableCommand {
 struct MCPUninstall: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "uninstall",
-        abstract: "Remove Bear MCP server from Claude Desktop configuration"
+        abstract: "Remove Better Bear MCP server from Claude Desktop configuration"
     )
 
     func run() throws {
@@ -130,17 +130,17 @@ struct MCPUninstall: ParsableCommand {
             return
         }
 
-        guard mcpServers["bear"] != nil else {
-            print("Bear MCP server is not installed. Nothing to uninstall.")
+        guard mcpServers["better-bear-mcp"] != nil else {
+            print("Better Bear MCP server is not installed. Nothing to uninstall.")
             return
         }
 
-        mcpServers.removeValue(forKey: "bear")
+        mcpServers.removeValue(forKey: "better-bear-mcp")
         config["mcpServers"] = mcpServers
 
         try writeClaudeConfig(config, to: configURL)
 
-        print("Bear MCP server removed.")
+        print("Better Bear MCP server removed.")
         print("Restart Claude Desktop to apply.")
     }
 }

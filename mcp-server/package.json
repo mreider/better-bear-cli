@@ -1,11 +1,11 @@
 {
-  "name": "bear-mcp-server",
+  "name": "better-bear-mcp",
   "version": "0.1.0",
   "description": "MCP server for Bear notes via better-bear-cli",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "bear-mcp-server": "dist/index.js"
+    "better-bear-mcp": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",
