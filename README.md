@@ -1,5 +1,10 @@
 # better-bear-cli
 
+[![Build](https://github.com/mreider/better-bear-cli/actions/workflows/build-on-merge.yml/badge.svg)](https://github.com/mreider/better-bear-cli/actions/workflows/build-on-merge.yml)
+[![Release](https://img.shields.io/github/v/release/mreider/better-bear-cli)](https://github.com/mreider/better-bear-cli/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/mreider/better-bear-cli/blob/main/LICENSE)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-orange?logo=buy-me-a-coffee&logoColor=white)](https://buymeacoffee.com/mreider)
+
 A CLI for [Bear](https://bear.app) notes that talks directly to CloudKit. No SQLite hacking, no x-callback-url.
 
 ## Why
@@ -80,6 +85,53 @@ This CLI makes the same REST API calls Bear Web makes: `records/query`, `records
 
 Three record types: `SFNote` (notes), `SFNoteTag` (tags), `SFNoteBackLink` (wiki links between notes).
 
+## MCP Server (Claude Desktop)
+
+better-bear-cli includes an MCP server that exposes all Bear commands as tools in [Claude Desktop](https://claude.ai/download). This lets Claude read, search, create, and edit your Bear notes directly.
+
+### Setup
+
+```
+# Build the MCP server
+cd mcp-server && npm install && npm run build && cd ..
+
+# Install into Claude Desktop config
+bcli mcp install
+
+# Restart Claude Desktop — Bear tools should appear
+```
+
+To remove it later: `bcli mcp uninstall`
+
+### Available tools
+
+| Tool | Description |
+|------|-------------|
+| `bear_sync` | Sync notes from iCloud |
+| `bear_list_notes` | List notes with optional tag filter |
+| `bear_get_note` | Get a note's full content by ID |
+| `bear_search` | Full-text search across notes |
+| `bear_get_tags` | Get the full tag hierarchy |
+| `bear_create_note` | Create a new note |
+| `bear_edit_note` | Append to or replace a note's content |
+| `bear_trash_note` | Move a note to trash |
+| `bear_list_todos` | List notes with incomplete TODOs |
+| `bear_get_todos` | Get TODO items from a specific note |
+| `bear_toggle_todo` | Toggle a TODO item's completion |
+
+This is new and under active development. Please try it out and [open an issue](https://github.com/mreider/better-bear-cli/issues) if you run into problems.
+
 ## Safe to use with Bear open
 
 The CLI does not touch Bear's local SQLite database. It talks to CloudKit's cloud servers. Running the CLI while Bear is open is no different from having Bear open on two devices at once. CloudKit handles concurrency with optimistic locking via `recordChangeTag`.
+
+## Contributors
+
+<a href="https://github.com/mreider"><img src="https://avatars.githubusercontent.com/u/118036?v=4" width="50" height="50" style="border-radius:50%" alt="mreider"></a>
+<a href="https://github.com/program247365"><img src="https://avatars.githubusercontent.com/u/13910?v=4" width="50" height="50" style="border-radius:50%" alt="program247365"></a>
+<a href="https://github.com/asabirov"><img src="https://avatars.githubusercontent.com/u/733858?v=4" width="50" height="50" style="border-radius:50%" alt="asabirov"></a>
+<a href="https://github.com/darronz"><img src="https://avatars.githubusercontent.com/u/136805?v=4" width="50" height="50" style="border-radius:50%" alt="darronz"></a>
+
+## Support
+
+If you find this useful, consider [buying me a coffee](https://buymeacoffee.com/mreider) to help cover API token costs.

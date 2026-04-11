@@ -15,7 +15,7 @@ import { tools } from "./tools.js";
 
 const server = new Server(
   {
-    name: "bear-mcp-server",
+    name: "better-bear-mcp",
     version: "0.1.0",
   },
   {

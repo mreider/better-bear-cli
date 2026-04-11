@@ -10,7 +10,7 @@ public struct CreateNote: ParsableCommand {
     @Argument(help: "Note title")
     var title: String
 
-    @Option(name: .shortAndLong, help: "Note body text (or use --stdin to read from stdin)")
+    @Option(name: .shortAndLong, parsing: .unconditional, help: "Note body text (or use --stdin to read from stdin)")
     var body: String?
 
     @Option(name: .shortAndLong, help: "Tags (comma-separated)")
