@@ -18,6 +18,8 @@ public struct BearCLI: ParsableCommand {
             TodoCommand.self,
             ExportNotes.self,
             SyncCommand.self,
+            MCPCommand.self,
+            ConfigCommand.self,
         ]
     )
 

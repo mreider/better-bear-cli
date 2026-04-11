@@ -19,6 +19,9 @@ public struct EditNote: ParsableCommand {
     @Flag(name: .long, help: "Open in $EDITOR for interactive editing")
     var editor: Bool = false
 
+    @Flag(name: .long, help: "Output as JSON")
+    var json: Bool = false
+
     public init() {}
 
     public func run() throws {
@@ -28,6 +31,11 @@ public struct EditNote: ParsableCommand {
         let useStdin = self.stdin
         let appendText = self.append
         let useEditor = self.editor
+        let json = self.json
+
+        if json && useEditor {
+            throw ValidationError("--json and --editor cannot be used together")
+        }
 
         try runAsync {
             // Fetch the full note record
@@ -87,6 +95,9 @@ public struct EditNote: ParsableCommand {
                     return
                 }
             } else {
+                if json {
+                    throw ValidationError("No edit operation specified. Use --append or --stdin with --json.")
+                }
                 print("Specify one of: --stdin, --append, or --editor")
                 print("")
                 print("Examples:")
@@ -98,8 +109,21 @@ public struct EditNote: ParsableCommand {
 
             let updated = try await api.updateNote(record: record, newText: newText)
             let note = BearNote(from: updated)
-            print("Updated: \(note.title)")
-            print("ID: \(note.uniqueIdentifier)")
+
+            if json {
+                let output: [String: Any] = [
+                    "id": note.uniqueIdentifier,
+                    "title": note.title,
+                    "updated": true,
+                ]
+                if let data = try? JSONSerialization.data(withJSONObject: output, options: .prettyPrinted),
+                   let str = String(data: data, encoding: .utf8) {
+                    print(str)
+                }
+            } else {
+                print("Updated: \(note.title)")
+                print("ID: \(note.uniqueIdentifier)")
+            }
 
             // Update local cache
             if NoteCache.exists(), var cache = try? NoteCache.load() {

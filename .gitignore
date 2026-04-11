@@ -8,3 +8,5 @@ cloudkit-api-calls.txt
 auth.json
 .DS_Store
 .claude/
+mcp-server/node_modules/
+mcp-server/dist/

@@ -22,6 +22,9 @@ public struct CreateNote: ParsableCommand {
     @Flag(name: .long, help: "Output created note ID only (for scripting)")
     var quiet: Bool = false
 
+    @Flag(name: .long, help: "Output as JSON")
+    var json: Bool = false
+
     public init() {}
 
     public func run() throws {
@@ -29,6 +32,7 @@ public struct CreateNote: ParsableCommand {
         let api = CloudKitAPI(auth: auth)
         let title = self.title
         let quiet = self.quiet
+        let json = self.json
 
         var bodyText = self.body ?? ""
         if self.stdin {
@@ -54,7 +58,17 @@ public struct CreateNote: ParsableCommand {
             let record = try await api.createNote(title: title, text: bodyText, tags: tagList)
             let note = BearNote(from: record)
 
-            if quiet {
+            if json {
+                let output: [String: Any] = [
+                    "id": note.uniqueIdentifier,
+                    "title": note.title,
+                    "tags": tagList,
+                ]
+                if let data = try? JSONSerialization.data(withJSONObject: output, options: .prettyPrinted),
+                   let str = String(data: data, encoding: .utf8) {
+                    print(str)
+                }
+            } else if quiet {
                 print(note.uniqueIdentifier)
             } else {
                 print("Created: \(note.title)")

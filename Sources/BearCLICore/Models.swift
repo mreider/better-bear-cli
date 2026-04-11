@@ -382,13 +382,45 @@ public struct AuthConfig: Codable {
         self.savedAt = savedAt
     }
 
+    /// Load auth config. Tries Keychain first, falls back to file.
     public static func load() throws -> AuthConfig {
+        // Try Keychain first
+        if let config = try? loadFromKeychain() {
+            return config
+        }
+        // Fall back to file
         let data = try Data(contentsOf: configFile)
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return try decoder.decode(AuthConfig.self, from: data)
     }
 
+    /// Load from macOS Keychain.
+    public static func loadFromKeychain() throws -> AuthConfig {
+        guard let jsonString = KeychainStore.load(account: "auth") else {
+            throw BearCLIError.authNotConfigured
+        }
+        guard let data = jsonString.data(using: .utf8) else {
+            throw BearCLIError.authNotConfigured
+        }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode(AuthConfig.self, from: data)
+    }
+
+    /// Save to macOS Keychain.
+    public func saveToKeychain() throws {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(self)
+        guard let jsonString = String(data: data, encoding: .utf8) else {
+            throw BearCLIError.networkError("Failed to encode auth config")
+        }
+        try KeychainStore.save(account: "auth", data: jsonString)
+    }
+
+    /// Save to file (original behavior).
     public func save() throws {
         let dir = AuthConfig.configDir
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
