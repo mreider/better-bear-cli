@@ -15,7 +15,21 @@ This CLI uses the same CloudKit REST API that [Bear Web](https://web.bear.app) u
 
 ## Install
 
-### Download the binary
+### Quick install
+
+```
+curl -sL https://raw.githubusercontent.com/mreider/better-bear-cli/main/install.sh | bash
+```
+
+### Upgrade
+
+```
+bcli upgrade
+```
+
+This downloads the latest release and replaces the current binary in-place. After upgrading, run `hash -r` (or open a new terminal) to refresh your shell. If the MCP server was updated, restart Claude Desktop too.
+
+### Download manually
 
 Grab the latest release from [GitHub Releases](https://github.com/mreider/better-bear-cli/releases/latest).
 
