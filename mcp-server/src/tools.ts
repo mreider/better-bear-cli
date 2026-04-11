@@ -11,7 +11,7 @@ export const tools: Record<string, ToolHandler> = {
     tool: {
       name: "bear_list_notes",
       description:
-        "List Bear notes with optional tag filtering. Returns an array of notes with IDs, titles, tags, pin status, and modification dates. Use bear_get_note to read the full content of a specific note.",
+        "List Bear notes with optional tag filtering. Returns an array of notes with IDs, titles, tags, pin status, and modification dates. Notes with 'locked: true' are private/encrypted in Bear and their body content is not searchable — if a search returns no results, check whether the relevant note is locked. Use bear_get_note to read the full content of a specific note.",
       inputSchema: {
         type: "object" as const,
         properties: {
@@ -49,7 +49,7 @@ export const tools: Record<string, ToolHandler> = {
     tool: {
       name: "bear_get_note",
       description:
-        "Get a single Bear note's full content and metadata by ID. Returns the note title, tags, full markdown text, and dates. Use the 'raw' option to get just the markdown without metadata.",
+        "Get a single Bear note's full content and metadata by ID. Returns the note title, tags, full markdown text, and dates. If the note is locked/private, 'locked: true' will be included in the response. Use the 'raw' option to get just the markdown without metadata.",
       inputSchema: {
         type: "object" as const,
         properties: {
@@ -76,7 +76,7 @@ export const tools: Record<string, ToolHandler> = {
     tool: {
       name: "bear_search",
       description:
-        "Full-text search across Bear note titles, tags, and body content. Returns matching notes ranked by relevance (title matches first, then tag, then body). Body matches include a text snippet with surrounding context.",
+        "Full-text search across Bear note titles, tags, and body content. Returns matching notes ranked by relevance (title matches first, then tag, then body). Body matches include a text snippet with surrounding context. Locked/private notes will match by title but may not match body searches — results include 'locked: true' for these notes. If you can't find content you expect, try listing notes to check if the relevant note is locked.",
       inputSchema: {
         type: "object" as const,
         properties: {

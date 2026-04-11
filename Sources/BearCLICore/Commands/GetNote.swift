@@ -35,7 +35,7 @@ public struct GetNote: ParsableCommand {
             } else {
                 // If not found by record name, search by uniqueIdentifier
                 let allRecords = try await api.queryAllNotes(
-                    desiredKeys: ["uniqueIdentifier", "title", "text", "tagsStrings", "sf_creationDate", "sf_modificationDate", "pinned"]
+                    desiredKeys: ["uniqueIdentifier", "title", "text", "tagsStrings", "sf_creationDate", "sf_modificationDate", "pinned", "locked"]
                 )
 
                 guard let found = allRecords.first(where: {
@@ -71,6 +71,7 @@ public struct GetNote: ParsableCommand {
                     "pinned": note.pinned,
                     "text": noteText,
                 ]
+                if note.locked { obj["locked"] = true }
                 if let d = note.creationDate { obj["creationDate"] = dateFormatter.string(from: d) }
                 if let d = note.modificationDate { obj["modificationDate"] = dateFormatter.string(from: d) }
 

@@ -43,14 +43,14 @@ public struct ListNotes: ParsableCommand {
                 records = try await api.queryAllNotes(
                     trashed: trashed,
                     archived: archived,
-                    desiredKeys: ["uniqueIdentifier", "title", "sf_creationDate", "sf_modificationDate", "tagsStrings", "pinned", "todoCompleted", "todoIncompleted"]
+                    desiredKeys: ["uniqueIdentifier", "title", "sf_creationDate", "sf_modificationDate", "tagsStrings", "pinned", "locked", "todoCompleted", "todoIncompleted"]
                 )
             } else {
                 records = try await api.queryNotes(
                     trashed: trashed,
                     archived: archived,
                     limit: limit,
-                    desiredKeys: ["uniqueIdentifier", "title", "sf_creationDate", "sf_modificationDate", "tagsStrings", "pinned", "todoCompleted", "todoIncompleted"]
+                    desiredKeys: ["uniqueIdentifier", "title", "sf_creationDate", "sf_modificationDate", "tagsStrings", "pinned", "locked", "todoCompleted", "todoIncompleted"]
                 )
             }
 
@@ -98,13 +98,15 @@ public struct ListNotes: ParsableCommand {
     private func printJSON(_ notes: [BearNote]) {
         var output: [[String: Any]] = []
         for note in notes {
-            output.append([
+            var entry: [String: Any] = [
                 "id": note.uniqueIdentifier,
                 "title": note.title,
                 "tags": note.tags,
                 "pinned": note.pinned,
                 "modificationDate": note.modificationDate?.timeIntervalSince1970 ?? 0,
-            ])
+            ]
+            if note.locked { entry["locked"] = true }
+            output.append(entry)
         }
         if let data = try? JSONSerialization.data(withJSONObject: output, options: .prettyPrinted),
            let str = String(data: data, encoding: .utf8) {
