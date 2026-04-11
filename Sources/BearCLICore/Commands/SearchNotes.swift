@@ -115,6 +115,9 @@ public struct SearchNotes: ParsableCommand {
                     if let snippet = result.snippet {
                         entry["snippet"] = snippet
                     }
+                    if result.note.locked {
+                        entry["locked"] = true
+                    }
                     output.append(entry)
                 }
                 if let data = try? JSONSerialization.data(withJSONObject: output, options: .prettyPrinted),
