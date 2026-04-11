@@ -283,12 +283,16 @@ public struct CloudKitAPI {
     }
 
     /// Create a new note. Returns the created CKRecord.
-    public func createNote(title: String, text: String, tags: [String] = []) async throws -> CKRecord {
+    public func createNote(title: String, text: String, tags: [String] = [], frontMatter: String? = nil) async throws -> CKRecord {
         let noteID = UUID().uuidString
         let now = Int64(Date().timeIntervalSince1970 * 1000)
 
-        // Build the full markdown: title as H1, then tags, then body
-        var markdown = "# \(title)"
+        // Build the full markdown: optional front matter, then title as H1, then tags, then body
+        var markdown = ""
+        if let fm = frontMatter, !fm.isEmpty {
+            markdown += fm
+        }
+        markdown += "# \(title)"
         if !tags.isEmpty {
             markdown += "\n" + tags.map { "#\($0)" }.joined(separator: " ")
         }
@@ -353,16 +357,25 @@ public struct CloudKitAPI {
         let now = Int64(Date().timeIntervalSince1970 * 1000)
 
         // Extract title from the first H1 line of the new text, or keep existing
+        // Skip past front matter block if present
         let lines = newText.components(separatedBy: "\n")
+        let contentLines: ArraySlice<String>
+        if lines.first?.trimmingCharacters(in: .whitespaces) == "---",
+           let closeIdx = lines.dropFirst().firstIndex(where: { $0.trimmingCharacters(in: .whitespaces) == "---" }) {
+            contentLines = lines[(closeIdx + 1)...]
+        } else {
+            contentLines = lines[lines.startIndex...]
+        }
+
         let title: String
-        if let firstLine = lines.first, firstLine.hasPrefix("# ") {
+        if let firstLine = contentLines.first, firstLine.hasPrefix("# ") {
             title = String(firstLine.dropFirst(2))
         } else {
             title = record.fields["title"]?.value.stringValue ?? ""
         }
 
-        // Build subtitle from first non-title, non-tag, non-empty line
-        let subtitle = lines.dropFirst().first(where: {
+        // Build subtitle from first non-title, non-tag, non-empty content line
+        let subtitle = contentLines.dropFirst().first(where: {
             !$0.hasPrefix("#") && !$0.trimmingCharacters(in: .whitespaces).isEmpty
         }) ?? ""
 

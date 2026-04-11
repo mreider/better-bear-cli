@@ -55,7 +55,7 @@ public struct ExportNotes: ParsableCommand {
                 let note = BearNote(from: record)
 
                 // Get text: prefer textADP (inline), fall back to text asset
-                let text: String
+                var text: String
                 if let textADP = record.fields["textADP"]?.value.stringValue {
                     text = textADP
                 } else if let assetURL = note.textAssetURL {
@@ -81,20 +81,35 @@ public struct ExportNotes: ParsableCommand {
                     var content = ""
                     if frontmatter {
                         let dateFormatter = ISO8601DateFormatter()
-                        content += "---\n"
-                        content += "title: \"\(note.title.replacingOccurrences(of: "\"", with: "\\\""))\"\n"
-                        content += "id: \(note.uniqueIdentifier)\n"
+
+                        // Build Bear metadata front matter
+                        var exportFm = FrontMatter(fields: [
+                            ("title", "\"\(note.title.replacingOccurrences(of: "\"", with: "\\\""))\""),
+                            ("id", note.uniqueIdentifier),
+                        ])
                         if !note.tags.isEmpty {
-                            content += "tags: [\(note.tags.map { "\"\($0)\"" }.joined(separator: ", "))]\n"
+                            exportFm = exportFm.setting("tags", value: "[\(note.tags.map { "\"\($0)\"" }.joined(separator: ", "))]")
                         }
                         if let d = note.creationDate {
-                            content += "created: \(dateFormatter.string(from: d))\n"
+                            exportFm = exportFm.setting("created", value: dateFormatter.string(from: d))
                         }
                         if let d = note.modificationDate {
-                            content += "modified: \(dateFormatter.string(from: d))\n"
+                            exportFm = exportFm.setting("modified", value: dateFormatter.string(from: d))
                         }
-                        if note.pinned { content += "pinned: true\n" }
-                        content += "---\n\n"
+                        if note.pinned {
+                            exportFm = exportFm.setting("pinned", value: "true")
+                        }
+
+                        // Merge with any existing user front matter in the note
+                        let (userFm, bodyWithoutFm) = FrontMatter.parse(text)
+                        if let userFm = userFm {
+                            // User fields take precedence, then add Bear metadata
+                            exportFm = userFm.merging(with: exportFm)
+                            text = bodyWithoutFm
+                        }
+
+                        content += exportFm.toString()
+                        content += "\n"
                     }
 
                     content += text

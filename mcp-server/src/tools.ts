@@ -116,7 +116,7 @@ export const tools: Record<string, ToolHandler> = {
     tool: {
       name: "bear_create_note",
       description:
-        "Create a new Bear note with a title, optional body text, and optional tags. The note will sync to Bear on all devices via iCloud. Returns the new note's ID.",
+        "Create a new Bear note with a title, optional body text, tags, and YAML front matter. Front matter is stored as a collapsed metadata block at the top of the note. Returns the new note's ID.",
       inputSchema: {
         type: "object" as const,
         properties: {
@@ -133,6 +133,12 @@ export const tools: Record<string, ToolHandler> = {
             items: { type: "string" },
             description: "Tags to assign to the note",
           },
+          frontmatter: {
+            type: "object",
+            description:
+              "YAML front matter fields as key-value pairs (e.g. {status: 'draft', project: 'alpha'})",
+            additionalProperties: { type: "string" },
+          },
         },
         required: ["title"],
       },
@@ -143,6 +149,13 @@ export const tools: Record<string, ToolHandler> = {
       if (Array.isArray(input.tags) && input.tags.length > 0) {
         args.push("--tags", input.tags.join(","));
       }
+      if (input.frontmatter && typeof input.frontmatter === "object") {
+        const fm = input.frontmatter as Record<string, string>;
+        args.push(
+          "--fm",
+          ...Object.entries(fm).map(([k, v]) => `${k}=${v}`),
+        );
+      }
       return args;
     },
   },
@@ -151,7 +164,7 @@ export const tools: Record<string, ToolHandler> = {
     tool: {
       name: "bear_edit_note",
       description:
-        "Edit an existing Bear note. Provide either 'append_text' to add text to the end of the note, or 'body' to replace the entire note content. Exactly one must be specified.",
+        "Edit an existing Bear note. Provide 'append_text' to add text, 'body' to replace content, or 'set_frontmatter'/'remove_frontmatter' to edit YAML front matter fields. Front matter edits can be combined with each other but not with body/append.",
       inputSchema: {
         type: "object" as const,
         properties: {
@@ -168,11 +181,47 @@ export const tools: Record<string, ToolHandler> = {
             description:
               "New content to replace the entire note body",
           },
+          set_frontmatter: {
+            type: "object",
+            description:
+              "Front matter fields to set or update (key-value pairs)",
+            additionalProperties: { type: "string" },
+          },
+          remove_frontmatter: {
+            type: "array",
+            items: { type: "string" },
+            description: "Front matter field keys to remove",
+          },
         },
         required: ["id"],
       },
     },
     buildArgs: (input) => {
+      // Front matter editing mode
+      const hasFm =
+        (input.set_frontmatter &&
+          Object.keys(input.set_frontmatter as object).length > 0) ||
+        (Array.isArray(input.remove_frontmatter) &&
+          input.remove_frontmatter.length > 0);
+
+      if (hasFm && !input.append_text && !input.body) {
+        const args = ["edit", String(input.id), "--json"];
+        if (input.set_frontmatter && typeof input.set_frontmatter === "object") {
+          const fm = input.set_frontmatter as Record<string, string>;
+          args.push(
+            "--set-fm",
+            ...Object.entries(fm).map(([k, v]) => `${k}=${v}`),
+          );
+        }
+        if (Array.isArray(input.remove_frontmatter)) {
+          args.push(
+            "--remove-fm",
+            ...input.remove_frontmatter.map(String),
+          );
+        }
+        return args;
+      }
+
       if (input.append_text) {
         return [
           "edit",

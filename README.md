@@ -93,6 +93,48 @@ By default, attachments are appended to the end of the note. Use placement optio
 - `--before "text"` — before the first line containing "text"
 - `--at-line N` — after line N (1-based)
 
+### YAML front matter
+
+Bear supports [YAML front matter](https://community.bear.app/t/yaml-front-matter-uses-in-bear/13105) — a `---` delimited metadata block at the top of a note. Bear collapses it in the editor. Use it for status tracking, project metadata, blog publishing fields, or any custom key-value data.
+
+**Create with front matter:**
+
+```
+bcli create "Meeting Notes" --fm "status=draft" "project=alpha" "date=2026-04-11"
+```
+
+This produces:
+```yaml
+---
+status: draft
+project: alpha
+date: 2026-04-11
+---
+# Meeting Notes
+```
+
+**Read front matter** (included automatically in JSON output):
+
+```
+bcli get <id> --json
+```
+```json
+{
+  "title": "Meeting Notes",
+  "frontmatter": {"status": "draft", "project": "alpha", "date": "2026-04-11"},
+  "text": "..."
+}
+```
+
+**Edit front matter fields** without touching the note body:
+
+```
+bcli edit <id> --set-fm "status=done" "reviewed=true"
+bcli edit <id> --remove-fm "draft"
+```
+
+**Export** merges user front matter with Bear metadata (id, dates, tags) — user fields take precedence.
+
 ## How it works
 
 Bear Web is a CloudKit JS client that talks to `api.apple-cloudkit.com`. There is no Shiny Frog backend. Notes live in your iCloud private database under the container `iCloud.net.shinyfrog.bear` in a custom zone called `Notes`.
@@ -130,15 +172,15 @@ To remove it later: `bcli mcp uninstall`
 | `bear_get_note` | Get a note's full content by ID |
 | `bear_search` | Full-text search across notes |
 | `bear_get_tags` | Get the full tag hierarchy |
-| `bear_create_note` | Create a new note |
-| `bear_edit_note` | Append to or replace a note's content |
+| `bear_create_note` | Create a new note with optional front matter |
+| `bear_edit_note` | Append, replace content, or edit front matter fields |
 | `bear_attach_file` | Upload and attach an image or file to a note |
 | `bear_trash_note` | Move a note to trash |
 | `bear_list_todos` | List notes with incomplete TODOs |
 | `bear_get_todos` | Get TODO items from a specific note |
 | `bear_toggle_todo` | Toggle a TODO item's completion |
 
-The `bear_attach_file` tool accepts optional `after`, `before`, or `prepend` parameters to control where the attachment is inserted in the note. For example, Claude can attach an image after a specific heading or before a section.
+The `bear_attach_file` tool accepts optional `after`, `before`, or `prepend` parameters to control where the attachment is inserted in the note. The `bear_create_note` and `bear_edit_note` tools support YAML front matter via `frontmatter`, `set_frontmatter`, and `remove_frontmatter` parameters — Claude can create notes with structured metadata and update individual fields without touching the note body.
 
 Notes with `locked: true` in results are private/encrypted in Bear -- their body content may not be searchable.
 

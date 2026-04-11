@@ -16,6 +16,9 @@ public struct CreateNote: ParsableCommand {
     @Option(name: .shortAndLong, help: "Tags (comma-separated)")
     var tags: String?
 
+    @Option(name: .long, parsing: .upToNextOption, help: "Front matter fields (key=value, space-separated)")
+    var fm: [String] = []
+
     @Flag(name: .long, help: "Read note body from stdin")
     var stdin: Bool = false
 
@@ -54,8 +57,19 @@ public struct CreateNote: ParsableCommand {
             tagList = []
         }
 
+        let fmPairs = self.fm
+
         try runAsync {
-            let record = try await api.createNote(title: title, text: bodyText, tags: tagList)
+            // Build front matter string if --fm flags were provided
+            let frontMatterStr: String?
+            if !fmPairs.isEmpty {
+                let fm = FrontMatter(fromPairs: fmPairs)
+                frontMatterStr = fm.toString()
+            } else {
+                frontMatterStr = nil
+            }
+
+            let record = try await api.createNote(title: title, text: bodyText, tags: tagList, frontMatter: frontMatterStr)
             let note = BearNote(from: record)
 
             if json {
