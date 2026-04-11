@@ -42,16 +42,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   const params = (input ?? {}) as Record<string, unknown>;
 
-  // Validate bear_edit_note: exactly one of append_text or body
+  // Validate bear_edit_note: need at least one edit operation
   if (name === "bear_edit_note") {
     const hasAppend = params.append_text !== undefined;
     const hasBody = params.body !== undefined;
-    if (!hasAppend && !hasBody) {
+    const hasSetFm = params.set_frontmatter !== undefined &&
+      Object.keys(params.set_frontmatter as object).length > 0;
+    const hasRemoveFm = Array.isArray(params.remove_frontmatter) &&
+      (params.remove_frontmatter as unknown[]).length > 0;
+    const hasFm = hasSetFm || hasRemoveFm;
+
+    if (!hasAppend && !hasBody && !hasFm) {
       return {
         content: [
           {
             type: "text",
-            text: "Either 'append_text' or 'body' must be provided.",
+            text: "Provide 'append_text', 'body', 'set_frontmatter', or 'remove_frontmatter'.",
           },
         ],
         isError: true,

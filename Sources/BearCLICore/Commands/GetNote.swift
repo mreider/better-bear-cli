@@ -75,6 +75,12 @@ public struct GetNote: ParsableCommand {
                 if let d = note.creationDate { obj["creationDate"] = dateFormatter.string(from: d) }
                 if let d = note.modificationDate { obj["modificationDate"] = dateFormatter.string(from: d) }
 
+                // Parse and include front matter if present
+                let (fm, _) = FrontMatter.parse(noteText)
+                if let fm = fm, !fm.fields.isEmpty {
+                    obj["frontmatter"] = fm.toDictionary()
+                }
+
                 if let data = try? JSONSerialization.data(withJSONObject: obj, options: .prettyPrinted),
                    let str = String(data: data, encoding: .utf8) {
                     print(str)

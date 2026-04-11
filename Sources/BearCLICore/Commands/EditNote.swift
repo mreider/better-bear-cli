@@ -16,6 +16,12 @@ public struct EditNote: ParsableCommand {
     @Option(name: .long, parsing: .unconditional, help: "Append text to the end of the note")
     var append: String?
 
+    @Option(name: .long, parsing: .upToNextOption, help: "Set front matter field (key=value, repeatable)")
+    var setFm: [String] = []
+
+    @Option(name: .long, parsing: .upToNextOption, help: "Remove front matter field (key name, repeatable)")
+    var removeFm: [String] = []
+
     @Flag(name: .long, help: "Open in $EDITOR for interactive editing")
     var editor: Bool = false
 
@@ -30,6 +36,9 @@ public struct EditNote: ParsableCommand {
         let noteID = self.noteID
         let useStdin = self.stdin
         let appendText = self.append
+        let setFmPairs = self.setFm
+        let removeFmKeys = self.removeFm
+        let hasFmEdits = !setFmPairs.isEmpty || !removeFmKeys.isEmpty
         let useEditor = self.editor
         let json = self.json
 
@@ -94,11 +103,30 @@ public struct EditNote: ParsableCommand {
                     print("No changes made.")
                     return
                 }
+            } else if hasFmEdits {
+                // Edit front matter fields only
+                let (existingFm, body) = FrontMatter.parse(currentText)
+                var fm = existingFm ?? FrontMatter()
+
+                // Apply --set-fm pairs
+                for pair in setFmPairs {
+                    guard let eqIdx = pair.firstIndex(of: "=") else { continue }
+                    let key = String(pair[pair.startIndex..<eqIdx]).trimmingCharacters(in: .whitespaces)
+                    let value = String(pair[pair.index(after: eqIdx)...]).trimmingCharacters(in: .whitespaces)
+                    fm = fm.setting(key, value: value)
+                }
+
+                // Apply --remove-fm keys
+                for key in removeFmKeys {
+                    fm = fm.removing(key.trimmingCharacters(in: .whitespaces))
+                }
+
+                newText = fm.toNoteText(body: body)
             } else {
                 if json {
-                    throw ValidationError("No edit operation specified. Use --append or --stdin with --json.")
+                    throw ValidationError("No edit operation specified. Use --append, --stdin, --set-fm, or --remove-fm with --json.")
                 }
-                print("Specify one of: --stdin, --append, or --editor")
+                print("Specify one of: --stdin, --append, --editor, --set-fm, or --remove-fm")
                 print("")
                 print("Examples:")
                 print("  bcli edit <id> --append 'New paragraph'")
