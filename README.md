@@ -89,6 +89,8 @@ Three record types: `SFNote` (notes), `SFNoteTag` (tags), `SFNoteBackLink` (wiki
 
 better-bear-cli includes an MCP server that exposes all Bear commands as tools in [Claude Desktop](https://claude.ai/download). This lets Claude read, search, create, and edit your Bear notes directly.
 
+<img src="mcp-server/mcp-example.png" width="600" alt="Claude Desktop using Better Bear MCP to find a phone number from Bear notes">
+
 ### Setup
 
 ```
