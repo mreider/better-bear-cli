@@ -16,6 +16,15 @@ public struct EditNote: ParsableCommand {
     @Option(name: .long, parsing: .unconditional, help: "Append text to the end of the note")
     var append: String?
 
+    @Option(name: .long, parsing: .unconditional, help: "Insert appended text after the line containing this text (use with --append)")
+    var after: String?
+
+    @Option(name: .long, parsing: .unconditional, help: "Replace content under this heading (replaces until next heading of same or higher level)")
+    var replaceSection: String?
+
+    @Option(name: .long, parsing: .unconditional, help: "New content for the section (use with --replace-section)")
+    var sectionContent: String?
+
     @Option(name: .long, parsing: .upToNextOption, help: "Set front matter field (key=value, repeatable)")
     var setFm: [String] = []
 
@@ -36,6 +45,9 @@ public struct EditNote: ParsableCommand {
         let noteID = self.noteID
         let useStdin = self.stdin
         let appendText = self.append
+        let afterText = self.after
+        let replaceSectionName = self.replaceSection
+        let sectionContent = self.sectionContent
         let setFmPairs = self.setFm
         let removeFmKeys = self.removeFm
         let hasFmEdits = !setFmPairs.isEmpty || !removeFmKeys.isEmpty
@@ -70,10 +82,37 @@ public struct EditNote: ParsableCommand {
                 }
                 newText = lines.joined()
             } else if let text = appendText {
-                // Append to existing
-                newText = currentText.hasSuffix("\n")
-                    ? currentText + "\n" + text
-                    : currentText + "\n\n" + text
+                if let after = afterText {
+                    // Insert after matching line
+                    var lines = currentText.components(separatedBy: "\n")
+                    let needle = after.lowercased()
+                    var inserted = false
+                    for i in 0..<lines.count {
+                        let stripped = lines[i].replacingOccurrences(
+                            of: "^#{1,6}\\s+", with: "", options: .regularExpression
+                        ).lowercased()
+                        if lines[i].lowercased().contains(needle) || stripped.contains(needle) {
+                            lines.insert("", at: i + 1)
+                            lines.insert(text, at: i + 2)
+                            inserted = true
+                            break
+                        }
+                    }
+                    if !inserted {
+                        lines.append("")
+                        lines.append(text)
+                    }
+                    newText = lines.joined(separator: "\n")
+                } else {
+                    // Append to end
+                    newText = currentText.hasSuffix("\n")
+                        ? currentText + "\n" + text
+                        : currentText + "\n\n" + text
+                }
+            } else if let sectionName = replaceSectionName {
+                // Replace content under a heading
+                let content = sectionContent ?? ""
+                newText = replaceSection(in: currentText, heading: sectionName, with: content)
             } else if useEditor {
                 // Open in $EDITOR
                 let editorCmd = ProcessInfo.processInfo.environment["EDITOR"] ?? "vi"
@@ -182,5 +221,53 @@ public struct EditNote: ParsableCommand {
             throw BearCLIError.noteNotFound(noteID)
         }
         return full
+    }
+
+    /// Replace content under a heading, up to the next heading of same or higher level.
+    private func replaceSection(in text: String, heading: String, with newContent: String) -> String {
+        let lines = text.components(separatedBy: "\n")
+        let needle = heading.lowercased()
+
+        // Find the heading line
+        var headingIdx: Int? = nil
+        var headingLevel = 0
+        for (i, line) in lines.enumerated() {
+            let stripped = line.replacingOccurrences(
+                of: "^(#{1,6})\\s+", with: "", options: .regularExpression
+            )
+            let level = line.count - line.drop(while: { $0 == "#" }).count
+
+            if level > 0 && (line.lowercased().contains(needle) || stripped.lowercased().contains(needle)) {
+                headingIdx = i
+                headingLevel = level
+                break
+            }
+        }
+
+        guard let startIdx = headingIdx else {
+            // Heading not found, return unchanged
+            return text
+        }
+
+        // Find end of section: next heading of same or higher level, or end of text
+        var endIdx = lines.count
+        for i in (startIdx + 1)..<lines.count {
+            let line = lines[i]
+            let level = line.count - line.drop(while: { $0 == "#" }).count
+            if level > 0 && level <= headingLevel {
+                endIdx = i
+                break
+            }
+        }
+
+        // Rebuild: keep heading line, replace content between heading and next heading
+        var newLines = Array(lines[0...startIdx])
+        if !newContent.isEmpty {
+            newLines.append(newContent)
+        }
+        if endIdx < lines.count {
+            newLines.append(contentsOf: lines[endIdx...])
+        }
+        return newLines.joined(separator: "\n")
     }
 }

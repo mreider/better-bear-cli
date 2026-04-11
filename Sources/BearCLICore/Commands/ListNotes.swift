@@ -22,6 +22,9 @@ public struct ListNotes: ParsableCommand {
     @Option(name: .shortAndLong, help: "Filter by tag (partial match)")
     var tag: String?
 
+    @Flag(name: .long, help: "Show only untagged notes")
+    var untagged: Bool = false
+
     @Flag(name: .long, help: "Output as JSON")
     var json: Bool = false
 
@@ -56,7 +59,9 @@ public struct ListNotes: ParsableCommand {
 
             var notes = records.map { BearNote(from: $0) }
 
-            if let tagFilter = tag?.lowercased() {
+            if untagged {
+                notes = notes.filter { $0.tags.isEmpty }
+            } else if let tagFilter = tag?.lowercased() {
                 notes = notes.filter { note in
                     note.tags.contains { $0.lowercased().contains(tagFilter) }
                 }

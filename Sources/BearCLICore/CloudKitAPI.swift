@@ -206,6 +206,59 @@ public struct CloudKitAPI {
         return text
     }
 
+    /// Archive or unarchive a note.
+    public func archiveNote(record: CKRecord, archive: Bool = true) async throws -> CKRecord {
+        let now = Int64(Date().timeIntervalSince1970 * 1000)
+        let newClock = incrementVectorClock(
+            record.fields["vectorClock"]?.value.stringValue ?? ""
+        )
+
+        var fields: [String: AnyCodableValue] = [
+            "archived": .dictionary(["value": .int(archive ? 1 : 0), "type": .string("INT64")]),
+            "vectorClock": .dictionary(["value": .string(newClock), "type": .string("BYTES")]),
+            "sf_modificationDate": .dictionary(["value": .int(now), "type": .string("TIMESTAMP")]),
+        ]
+        if archive {
+            fields["archivedDate"] = .dictionary(["value": .int(now), "type": .string("TIMESTAMP")])
+        } else {
+            fields["archivedDate"] = .dictionary(["value": .null, "type": .string("TIMESTAMP")])
+        }
+
+        var recordDict: [String: AnyCodableValue] = [
+            "recordName": .string(record.recordName),
+            "recordType": .string("SFNote"),
+            "fields": .dictionary(fields),
+            "pluginFields": .dictionary([:]),
+            "recordChangeTag": .string(record.recordChangeTag ?? ""),
+            "deleted": .bool(false),
+        ]
+
+        if let created = record.created {
+            var d: [String: AnyCodableValue] = [:]
+            if let ts = created.timestamp { d["timestamp"] = .int(ts) }
+            if let user = created.userRecordName { d["userRecordName"] = .string(user) }
+            recordDict["created"] = .dictionary(d)
+        }
+        if let modified = record.modified {
+            var d: [String: AnyCodableValue] = [:]
+            if let ts = modified.timestamp { d["timestamp"] = .int(ts) }
+            if let user = modified.userRecordName { d["userRecordName"] = .string(user) }
+            recordDict["modified"] = .dictionary(d)
+        }
+
+        let operation: [String: AnyCodableValue] = [
+            "operationType": .string("update"),
+            "record": .dictionary(recordDict),
+            "recordType": .string("SFNote"),
+        ]
+
+        let records = try await modifyRecords(operations: [operation])
+        guard let result = records.first else {
+            throw BearCLIError.networkError("Archive succeeded but no record returned")
+        }
+        return result
+    }
+
     // MARK: - Upload Asset
 
     /// Upload a file as a CloudKit asset. Returns the asset dictionary to use in a record's ASSETID field.
