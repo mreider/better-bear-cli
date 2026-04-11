@@ -20,6 +20,7 @@ public struct BearCLI: ParsableCommand {
             ExportNotes.self,
             SyncCommand.self,
             MCPCommand.self,
+            UpgradeCommand.self,
             ConfigCommand.self,
         ]
     )
