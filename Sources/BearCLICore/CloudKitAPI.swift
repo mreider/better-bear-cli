@@ -1,4 +1,5 @@
 import Foundation
+import ImageIO
 
 /// Client for CloudKit Web Services REST API targeting Bear's iCloud container.
 public struct CloudKitAPI {
@@ -203,6 +204,59 @@ public struct CloudKitAPI {
         }
 
         return text
+    }
+
+    // MARK: - Upload Asset
+
+    /// Upload a file as a CloudKit asset. Returns the asset dictionary to use in a record's ASSETID field.
+    /// Two-step flow: 1) POST to assets/upload to get an upload URL, 2) POST binary to that URL.
+    public func uploadAsset(
+        fileData: Data,
+        fileName: String,
+        contentType: String,
+        recordType: String = "SFNoteImage",
+        recordName: String,
+        fieldName: String = "file"
+    ) async throws -> [String: AnyCodableValue] {
+        // Step 1: Request an upload URL from CloudKit
+        let tokenRequest: [String: AnyCodableValue] = [
+            "zoneID": .dictionary(["zoneName": .string("Notes")]),
+            "tokens": .array([
+                .dictionary([
+                    "recordType": .string(recordType),
+                    "recordName": .string(recordName),
+                    "fieldName": .string(fieldName),
+                ]),
+            ]),
+        ]
+
+        let uploadResponse: CKAssetUploadResponse = try await post(
+            path: "assets/upload", body: tokenRequest
+        )
+
+        guard let token = uploadResponse.tokens.first,
+              let uploadURL = URL(string: token.url)
+        else {
+            throw BearCLIError.networkError("No upload URL returned from assets/upload")
+        }
+
+        // Step 2: POST the raw binary to the upload URL
+        var uploadRequest = URLRequest(url: uploadURL)
+        uploadRequest.httpMethod = "POST"
+        uploadRequest.setValue(contentType, forHTTPHeaderField: "Content-Type")
+        uploadRequest.httpBody = fileData
+
+        let (responseData, response) = try await URLSession.shared.data(for: uploadRequest)
+
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            let body = String(data: responseData, encoding: .utf8) ?? ""
+            throw BearCLIError.apiError(status, "Asset upload failed: \(body)")
+        }
+
+        // Parse the receipt from the singleFileUpload response
+        let receipt = try JSONDecoder().decode(CKAssetUploadReceipt.self, from: responseData)
+        return receipt.singleFile.toFieldValue()
     }
 
     // MARK: - Modify Records (create/update)
@@ -458,6 +512,241 @@ public struct CloudKitAPI {
             throw BearCLIError.networkError("Trash succeeded but no record returned")
         }
         return trashed
+    }
+
+    /// Where to insert the attachment in the note's markdown.
+    public enum AttachPosition {
+        case append
+        case prepend   // after the title line
+        case at(Int)   // after line number (0-based)
+    }
+
+    /// Attach a file to an existing note. Uploads the asset, creates the image/file record,
+    /// and updates the note's markdown and metadata.
+    public func attachToNote(
+        noteRecord: CKRecord,
+        fileData: Data,
+        fileName: String,
+        contentType: String,
+        position: AttachPosition = .append
+    ) async throws -> (imageRecord: CKRecord, updatedNote: CKRecord) {
+        let imageRecordID = UUID().uuidString
+        let noteID = noteRecord.fields["uniqueIdentifier"]?.value.stringValue ?? noteRecord.recordName
+        let now = Int64(Date().timeIntervalSince1970 * 1000)
+
+        let ext = URL(fileURLWithPath: fileName).pathExtension.lowercased()
+        let isImage = ["jpg", "jpeg", "png", "gif", "webp", "heic", "svg", "avif", "apng"].contains(ext)
+        let recordType = isImage ? "SFNoteImage" : "SFNoteGenericFile"
+
+        // Step 1: Upload the binary asset
+        let assetValue = try await uploadAsset(
+            fileData: fileData,
+            fileName: fileName,
+            contentType: contentType,
+            recordType: recordType,
+            recordName: imageRecordID,
+            fieldName: "file"
+        )
+
+        // Step 2: Build the image/file record
+        // Build the file/asset field value — must be {"type": "ASSETID", "value": {...receipt...}}
+        let fileFieldValue: [String: AnyCodableValue] = [
+            "type": .string("ASSETID"),
+            "value": .dictionary(assetValue),
+        ]
+
+        var imageFields: [String: AnyCodableValue] = [
+            "filenameADP": .dictionary([
+                "type": .string("STRING"), "value": .string(fileName), "isEncrypted": .bool(true),
+            ]),
+            "normalizedFileExtension": .dictionary([
+                "type": .string("STRING"), "value": .string(ext),
+            ]),
+            "fileSize": .dictionary([
+                "type": .string("INT64"), "value": .int(Int64(fileData.count)),
+            ]),
+            "file": .dictionary(fileFieldValue),
+            "noteUniqueIdentifier": .dictionary([
+                "type": .string("STRING"), "value": .string(noteID),
+            ]),
+            "index": .dictionary([
+                "type": .string("INT64"), "value": .int(0),
+            ]),
+            "unused": .dictionary([
+                "type": .string("INT64"), "value": .int(0),
+            ]),
+            "uploaded": .dictionary([
+                "type": .string("INT64"), "value": .int(1),
+            ]),
+            "uploadedDate": .dictionary([
+                "type": .string("TIMESTAMP"), "value": .int(now),
+            ]),
+            "insertionDate": .dictionary([
+                "type": .string("TIMESTAMP"), "value": .int(now),
+            ]),
+            "encrypted": .dictionary([
+                "type": .string("INT64"), "value": .int(0),
+            ]),
+            "animated": .dictionary([
+                "type": .string("INT64"), "value": .int(ext == "gif" ? 1 : 0),
+            ]),
+            "version": .dictionary([
+                "type": .string("INT64"), "value": .int(3),
+            ]),
+            "sf_creationDate": .dictionary([
+                "type": .string("TIMESTAMP"), "value": .int(now),
+            ]),
+            "sf_modificationDate": .dictionary([
+                "type": .string("TIMESTAMP"), "value": .int(now),
+            ]),
+            "uniqueIdentifier": .dictionary([
+                "type": .string("STRING"), "value": .string(imageRecordID),
+            ]),
+        ]
+
+        // Add width/height for images if we can detect them
+        if isImage, let imageSource = CGImageSourceCreateWithData(fileData as CFData, nil),
+           let properties = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, nil) as? [String: Any],
+           let width = properties[kCGImagePropertyPixelWidth as String] as? Int,
+           let height = properties[kCGImagePropertyPixelHeight as String] as? Int {
+            imageFields["width"] = .dictionary(["type": .string("INT64"), "value": .int(Int64(width))])
+            imageFields["height"] = .dictionary(["type": .string("INT64"), "value": .int(Int64(height))])
+        }
+
+        let imageOp: [String: AnyCodableValue] = [
+            "operationType": .string("create"),
+            "record": .dictionary([
+                "recordName": .string(imageRecordID),
+                "recordType": .string(recordType),
+                "fields": .dictionary(imageFields),
+                "pluginFields": .dictionary([:]),
+                "recordChangeTag": .null,
+                "created": .null,
+                "modified": .null,
+                "deleted": .bool(false),
+            ]),
+            "recordType": .string(recordType),
+        ]
+
+        // Step 3: Update the note's markdown to embed the file
+        var noteText = ""
+        if let textADP = noteRecord.fields["textADP"]?.value.stringValue {
+            noteText = textADP
+        } else if let assetURL = BearNote(from: noteRecord).textAssetURL {
+            noteText = try await downloadAsset(url: assetURL)
+        }
+
+        let encodedName = fileName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? fileName
+        let embedMarkdown: String
+        if isImage {
+            embedMarkdown = "![\(fileName)](\(encodedName))<!-- {\"preview\":\"true\",\"embed\":\"true\"} -->"
+        } else {
+            embedMarkdown = "[\(encodedName)](\(encodedName))<!-- {\"preview\":\"true\",\"embed\":\"true\"} -->"
+        }
+
+        let newText: String
+        switch position {
+        case .append:
+            newText = noteText.hasSuffix("\n")
+                ? noteText + "\n" + embedMarkdown
+                : noteText + "\n\n" + embedMarkdown
+        case .prepend:
+            // Insert after the first line (title)
+            var lines = noteText.components(separatedBy: "\n")
+            if lines.count > 1 {
+                lines.insert("", at: 1)
+                lines.insert(embedMarkdown, at: 2)
+            } else {
+                lines.append("")
+                lines.append(embedMarkdown)
+            }
+            newText = lines.joined(separator: "\n")
+        case .at(let lineNumber):
+            var lines = noteText.components(separatedBy: "\n")
+            let insertAt = min(lineNumber, lines.count)
+            lines.insert(embedMarkdown, at: insertAt)
+            lines.insert("", at: insertAt)
+            newText = lines.joined(separator: "\n")
+        }
+
+        // Build existing files list and add the new one
+        var existingFiles: [AnyCodableValue] = []
+        if let filesArray = noteRecord.fields["files"]?.value.arrayValue {
+            existingFiles = filesArray
+        }
+        existingFiles.append(.string(imageRecordID))
+
+        let newClock = incrementVectorClock(
+            noteRecord.fields["vectorClock"]?.value.stringValue ?? ""
+        )
+
+        let title: String
+        let lines = newText.components(separatedBy: "\n")
+        if let firstLine = lines.first, firstLine.hasPrefix("# ") {
+            title = String(firstLine.dropFirst(2))
+        } else {
+            title = noteRecord.fields["title"]?.value.stringValue ?? ""
+        }
+
+        let noteFields: [String: AnyCodableValue] = [
+            "textADP": .dictionary([
+                "value": .string(newText), "type": .string("STRING"), "isEncrypted": .bool(true),
+            ]),
+            "title": .dictionary(["value": .string(title), "type": .string("STRING")]),
+            "files": .dictionary(["value": .array(existingFiles), "type": .string("STRING_LIST")]),
+            "hasImages": .dictionary([
+                "value": .int(isImage ? 1 : (noteRecord.fields["hasImages"]?.value.intValue ?? 0)),
+                "type": .string("INT64"),
+            ]),
+            "hasFiles": .dictionary([
+                "value": .int(isImage ? (noteRecord.fields["hasFiles"]?.value.intValue ?? 0) : 1),
+                "type": .string("INT64"),
+            ]),
+            "vectorClock": .dictionary(["value": .string(newClock), "type": .string("BYTES")]),
+            "sf_modificationDate": .dictionary(["value": .int(now), "type": .string("TIMESTAMP")]),
+            "lastEditingDevice": .dictionary(["value": .string("Bear CLI"), "type": .string("STRING")]),
+            "text": .dictionary(["value": .null, "type": .string("STRING")]),
+        ]
+
+        var noteRecordDict: [String: AnyCodableValue] = [
+            "recordName": .string(noteRecord.recordName),
+            "recordType": .string("SFNote"),
+            "fields": .dictionary(noteFields),
+            "pluginFields": .dictionary([:]),
+            "recordChangeTag": .string(noteRecord.recordChangeTag ?? ""),
+            "deleted": .bool(false),
+        ]
+
+        if let created = noteRecord.created {
+            var d: [String: AnyCodableValue] = [:]
+            if let ts = created.timestamp { d["timestamp"] = .int(ts) }
+            if let user = created.userRecordName { d["userRecordName"] = .string(user) }
+            noteRecordDict["created"] = .dictionary(d)
+        }
+        if let modified = noteRecord.modified {
+            var d: [String: AnyCodableValue] = [:]
+            if let ts = modified.timestamp { d["timestamp"] = .int(ts) }
+            if let user = modified.userRecordName { d["userRecordName"] = .string(user) }
+            noteRecordDict["modified"] = .dictionary(d)
+        }
+
+        let noteOp: [String: AnyCodableValue] = [
+            "operationType": .string("update"),
+            "record": .dictionary(noteRecordDict),
+            "recordType": .string("SFNote"),
+        ]
+
+        // Step 4: Send both operations in one records/modify call
+        let records = try await modifyRecords(operations: [imageOp, noteOp])
+
+        guard let imageResult = records.first(where: { $0.recordName == imageRecordID }) else {
+            throw BearCLIError.networkError("Attach succeeded but image record not in response")
+        }
+        guard let noteResult = records.first(where: { $0.recordName == noteRecord.recordName }) else {
+            throw BearCLIError.networkError("Attach succeeded but note record not in response")
+        }
+
+        return (imageResult, noteResult)
     }
 
     // MARK: - Helper: Build Create Operations

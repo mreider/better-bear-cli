@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/mreider/better-bear-cli/blob/main/LICENSE)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-orange?logo=buy-me-a-coffee&logoColor=white)](https://buymeacoffee.com/mreider)
 
-A CLI for [Bear](https://bear.app) notes that talks directly to CloudKit. No SQLite hacking, no x-callback-url.
+A CLI and [MCP server](https://modelcontextprotocol.io/) for [Bear](https://bear.app) notes that talks directly to CloudKit. No SQLite hacking, no x-callback-url. Use it from the terminal or let AI assistants like Claude read, search, create, and edit your Bear notes.
 
 ## Why
 
@@ -75,7 +75,23 @@ bcli todo <id>                       View TODOs in a note (interactive toggle)
 bcli todo <id> --toggle 3            Toggle item 3 without prompting
 bcli todo --json                     JSON output
 bcli todo --no-sync                  Skip auto-sync
+bcli attach <id> photo.jpg           Attach an image to a note
+bcli attach <id> doc.pdf             Attach any file
+bcli attach <id> img.png --prepend   Insert after the title
+bcli attach <id> img.png --after "Profile"   Insert after a heading or text
+bcli attach <id> img.png --before "Footer"   Insert before a heading or text
 ```
+
+### Attaching images and files
+
+`bcli attach` uploads files to iCloud and embeds them in the note's markdown. Images (jpg, png, gif, webp, heic, svg) render inline in Bear. Other files (pdf, zip, txt, etc.) appear as embedded attachments.
+
+By default, attachments are appended to the end of the note. Use placement options to control where:
+
+- `--prepend` — right after the title line
+- `--after "text"` — after the first line containing "text" (matches headings like `## text` too)
+- `--before "text"` — before the first line containing "text"
+- `--at-line N` — after line N (1-based)
 
 ## How it works
 
@@ -116,12 +132,17 @@ To remove it later: `bcli mcp uninstall`
 | `bear_get_tags` | Get the full tag hierarchy |
 | `bear_create_note` | Create a new note |
 | `bear_edit_note` | Append to or replace a note's content |
+| `bear_attach_file` | Upload and attach an image or file to a note |
 | `bear_trash_note` | Move a note to trash |
 | `bear_list_todos` | List notes with incomplete TODOs |
 | `bear_get_todos` | Get TODO items from a specific note |
 | `bear_toggle_todo` | Toggle a TODO item's completion |
 
-This is new and under active development. Please try it out and [open an issue](https://github.com/mreider/better-bear-cli/issues) if you run into problems.
+The `bear_attach_file` tool accepts optional `after`, `before`, or `prepend` parameters to control where the attachment is inserted in the note. For example, Claude can attach an image after a specific heading or before a section.
+
+Notes with `locked: true` in results are private/encrypted in Bear -- their body content may not be searchable.
+
+This is under active development. Please try it out and [open an issue](https://github.com/mreider/better-bear-cli/issues) if you run into problems.
 
 ## Safe to use with Bear open
 
