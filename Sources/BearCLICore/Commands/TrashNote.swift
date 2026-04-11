@@ -13,6 +13,9 @@ public struct TrashNote: ParsableCommand {
     @Flag(name: .long, help: "Skip confirmation prompt")
     var force: Bool = false
 
+    @Flag(name: .long, help: "Output as JSON")
+    var json: Bool = false
+
     public init() {}
 
     public func run() throws {
@@ -20,6 +23,7 @@ public struct TrashNote: ParsableCommand {
         let api = CloudKitAPI(auth: auth)
         let noteID = self.noteID
         let force = self.force
+        let json = self.json
 
         try runAsync {
             // Fetch the note
@@ -44,7 +48,7 @@ public struct TrashNote: ParsableCommand {
 
             let note = BearNote(from: record)
 
-            if !force {
+            if !force && !json {
                 print("Trash note: \"\(note.title)\"? [y/N] ", terminator: "")
                 guard let answer = readLine(), answer.lowercased() == "y" else {
                     print("Cancelled.")
@@ -53,7 +57,20 @@ public struct TrashNote: ParsableCommand {
             }
 
             let trashed = try await api.trashNote(record: record)
-            print("Trashed: \(note.title)")
+
+            if json {
+                let output: [String: Any] = [
+                    "id": note.uniqueIdentifier,
+                    "title": note.title,
+                    "trashed": true,
+                ]
+                if let data = try? JSONSerialization.data(withJSONObject: output, options: .prettyPrinted),
+                   let str = String(data: data, encoding: .utf8) {
+                    print(str)
+                }
+            } else {
+                print("Trashed: \(note.title)")
+            }
 
             // Update local cache
             if NoteCache.exists(), var cache = try? NoteCache.load() {

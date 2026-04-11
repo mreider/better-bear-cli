@@ -13,9 +13,21 @@ public struct AuthCommand: ParsableCommand {
     @Flag(name: .long, help: "Force browser-based authentication even if already authenticated")
     var browser: Bool = false
 
+    @Flag(name: .long, help: "Store auth token in macOS Keychain instead of file")
+    var keychain: Bool = false
+
+    @Flag(name: .long, help: "Migrate existing file-based auth to Keychain")
+    var migrateToKeychain: Bool = false
+
     public init() {}
 
     public func run() throws {
+        // Handle migration separately
+        if migrateToKeychain {
+            try migrateAuthToKeychain()
+            return
+        }
+
         let webAuthToken: String
 
         if let t = token {
@@ -85,12 +97,52 @@ public struct AuthCommand: ParsableCommand {
                 let zoneNames = zones.map { $0.zoneID.zoneName }
                 print("Authenticated successfully.")
                 print("Zones found: \(zoneNames.joined(separator: ", "))")
-                try config.save()
-                print("Token saved to \(AuthConfig.configFile.path)")
+
+                if keychain {
+                    try config.saveToKeychain()
+                    print("Token saved to macOS Keychain.")
+                } else {
+                    try config.save()
+                    print("Token saved to \(AuthConfig.configFile.path)")
+                }
             } catch BearCLIError.authExpired {
                 print("Error: Token is invalid or expired.")
                 print("Try running `bcli auth` again to get a fresh token.")
             }
+        }
+    }
+
+    private func migrateAuthToKeychain() throws {
+        // Load from file
+        let fileURL = AuthConfig.configFile
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            print("No auth file found at \(fileURL.path). Nothing to migrate.")
+            return
+        }
+
+        let data = try Data(contentsOf: fileURL)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let config = try decoder.decode(AuthConfig.self, from: data)
+
+        // Validate the token still works
+        try runAsync {
+            let api = CloudKitAPI(auth: config)
+            do {
+                _ = try await api.listZones()
+            } catch BearCLIError.authExpired {
+                print("Error: The stored token is expired. Run `bcli auth --keychain` to get a fresh token.")
+                return
+            }
+
+            // Save to Keychain
+            try config.saveToKeychain()
+
+            // Remove the file
+            try FileManager.default.removeItem(at: fileURL)
+
+            print("Auth migrated to macOS Keychain.")
+            print("File removed: \(fileURL.path)")
         }
     }
 }
