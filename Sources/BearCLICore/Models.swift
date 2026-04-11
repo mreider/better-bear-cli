@@ -357,6 +357,50 @@ public struct BearTag {
     }
 }
 
+// MARK: - CloudKit Asset Upload Types
+
+/// Response from /assets/upload — contains upload URLs for each requested token
+public struct CKAssetUploadResponse: Decodable {
+    public let tokens: [CKAssetUploadToken]
+}
+
+public struct CKAssetUploadToken: Decodable {
+    public let recordName: String
+    public let fieldName: String
+    public let url: String
+}
+
+/// Response from the singleFileUpload binary upload endpoint
+public struct CKAssetUploadReceipt: Decodable {
+    public let singleFile: CKAssetFileReceipt
+}
+
+/// The receipt from a successful asset binary upload.
+/// Contains the fields needed for the ASSETID field value in records/modify.
+public struct CKAssetFileReceipt: Decodable {
+    public let fileChecksum: String
+    public let receipt: String
+    public let size: Int64
+    public let wrappingKey: String?
+    public let referenceChecksum: String?
+
+    /// Convert to the dictionary value for use in a CloudKit record's ASSETID field.
+    public func toFieldValue() -> [String: AnyCodableValue] {
+        var dict: [String: AnyCodableValue] = [
+            "fileChecksum": .string(fileChecksum),
+            "receipt": .string(receipt),
+            "size": .int(size),
+        ]
+        if let key = wrappingKey {
+            dict["wrappingKey"] = .string(key)
+        }
+        if let ref = referenceChecksum {
+            dict["referenceChecksum"] = .string(ref)
+        }
+        return dict
+    }
+}
+
 // MARK: - Auth Config
 
 public struct AuthConfig: Codable {
