@@ -185,6 +185,47 @@ else
 fi
 
 echo ""
+echo "=== 15b. bear_edit_note (roundtrip integrity) ==="
+# Create a note, edit it multiple times, verify no duplicated content
+RT_ID=$($BCLI create "Roundtrip Test" --body "line one" --json 2>&1 | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+CLEANUP_IDS+=("$RT_ID")
+$BCLI edit "$RT_ID" --append "line two" --json 2>/dev/null
+$BCLI edit "$RT_ID" --append "line three" --json 2>/dev/null
+RT_TEXT=$($BCLI get "$RT_ID" --json --raw 2>&1)
+RT_TITLE_COUNT=$(echo "$RT_TEXT" | python3 -c "import sys,json; t=json.load(sys.stdin)['text']; print(t.count('# Roundtrip Test'))")
+RT_LINE_COUNT=$(echo "$RT_TEXT" | python3 -c "import sys,json; t=json.load(sys.stdin)['text']; print(t.count('line one'))")
+if [ "$RT_TITLE_COUNT" = "1" ] && [ "$RT_LINE_COUNT" = "1" ]; then
+  pass "edit roundtrip: no duplicated title or content"
+else
+  fail "edit roundtrip" "title appeared $RT_TITLE_COUNT times, 'line one' appeared $RT_LINE_COUNT times"
+fi
+
+echo ""
+echo "=== 15c. bear_create_note (with front matter) ==="
+FM_ID=$($BCLI create "FM Test" --body "body text" --fm "status=draft" "project=test" --json 2>&1 | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+CLEANUP_IDS+=("$FM_ID")
+FM_TEXT=$($BCLI get "$FM_ID" --json 2>&1)
+FM_HAS=$(echo "$FM_TEXT" | python3 -c "import sys,json; d=json.load(sys.stdin); fm=d.get('frontmatter',{}); print('ok' if fm.get('status')=='draft' and fm.get('project')=='test' else 'fail')")
+FM_TITLE_COUNT=$(echo "$FM_TEXT" | python3 -c "import sys,json; t=json.load(sys.stdin)['text']; print(t.count('# FM Test'))")
+if [ "$FM_HAS" = "ok" ] && [ "$FM_TITLE_COUNT" = "1" ]; then
+  pass "front matter created correctly, single title"
+else
+  fail "front matter create" "frontmatter=$FM_HAS, title count=$FM_TITLE_COUNT"
+fi
+
+echo ""
+echo "=== 15d. bear_edit_note (front matter edit) ==="
+$BCLI edit "$FM_ID" --set-fm "status=done" --json 2>/dev/null
+FM_UPDATED=$($BCLI get "$FM_ID" --json 2>&1)
+FM_STATUS=$(echo "$FM_UPDATED" | python3 -c "import sys,json; print(json.load(sys.stdin).get('frontmatter',{}).get('status',''))")
+FM_BODY_OK=$(echo "$FM_UPDATED" | python3 -c "import sys,json; t=json.load(sys.stdin)['text']; print('ok' if 'body text' in t and t.count('# FM Test')==1 else 'fail')")
+if [ "$FM_STATUS" = "done" ] && [ "$FM_BODY_OK" = "ok" ]; then
+  pass "front matter edit: status updated, body intact"
+else
+  fail "front matter edit" "status=$FM_STATUS, body=$FM_BODY_OK"
+fi
+
+echo ""
 echo "=== 16. bear_sync (full) ==="
 OUT=$($BCLI sync --full --json 2>&1)
 if echo "$OUT" | python3 -c "import sys,json; d=json.load(sys.stdin); assert 'notesCount' in d" 2>/dev/null; then

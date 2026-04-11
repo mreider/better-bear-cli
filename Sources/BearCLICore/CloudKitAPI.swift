@@ -393,6 +393,9 @@ public struct CloudKitAPI {
         let existingUniqueID = record.fields["uniqueIdentifier"]?.value.stringValue
             ?? record.recordName
 
+        // Build conflict identifier: device/timestamp to signal this edit to other clients
+        let conflictID = "Bear CLI/\(now)"
+
         let fields: [String: AnyCodableValue] = [
             "textADP": .dictionary([
                 "value": .string(newText),
@@ -401,6 +404,10 @@ public struct CloudKitAPI {
             ]),
             "title": .dictionary([
                 "value": .string(title),
+                "type": .string("STRING"),
+            ]),
+            "subtitle": .dictionary([
+                "value": .string(subtitle),
                 "type": .string("STRING"),
             ]),
             "subtitleADP": .dictionary([
@@ -419,6 +426,14 @@ public struct CloudKitAPI {
             "lastEditingDevice": .dictionary([
                 "value": .string("Bear CLI"),
                 "type": .string("STRING"),
+            ]),
+            "conflictUniqueIdentifier": .dictionary([
+                "value": .string(conflictID),
+                "type": .string("STRING"),
+            ]),
+            "conflictUniqueIdentifierDate": .dictionary([
+                "value": .int(now),
+                "type": .string("TIMESTAMP"),
             ]),
             "todoCompleted": .dictionary([
                 "value": .int(Int64(todoCompletedCount)),
