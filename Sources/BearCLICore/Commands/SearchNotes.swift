@@ -13,6 +13,12 @@ public struct SearchNotes: ParsableCommand {
     @Option(name: .shortAndLong, help: "Maximum results")
     var limit: Int = 20
 
+    @Option(name: .long, parsing: .unconditional, help: "Only notes modified after this date (YYYY-MM-DD, or: today, yesterday, last-week, last-month)")
+    var since: String?
+
+    @Option(name: .long, parsing: .unconditional, help: "Only notes modified before this date (YYYY-MM-DD)")
+    var before: String?
+
     @Flag(name: .long, help: "Output as JSON")
     var json: Bool = false
 
@@ -62,11 +68,19 @@ public struct SearchNotes: ParsableCommand {
                 }
             }
 
+            // Parse date filters
+            let sinceDate = self.since.flatMap { DateFilter.parse($0) }
+            let beforeDate = self.before.flatMap { DateFilter.parse($0) }
+
             var results: [SearchResult] = []
 
             for (_, note) in cache.notes {
                 // Skip trashed notes
                 if note.trashed { continue }
+
+                // Apply date filters
+                if let since = sinceDate, let mod = note.modificationDate, mod < since { continue }
+                if let before = beforeDate, let mod = note.modificationDate, mod >= before { continue }
 
                 let titleMatch = note.title.lowercased().contains(term)
                 let tagMatch = note.tags.contains { $0.lowercased().contains(term) }
@@ -167,5 +181,33 @@ public struct SearchNotes: ParsableCommand {
         snippet = snippet.trimmingCharacters(in: .whitespaces)
 
         return snippet
+    }
+}
+
+/// Parse relative and absolute date strings for search filters.
+enum DateFilter {
+    static func parse(_ input: String) -> Date? {
+        let lower = input.lowercased().trimmingCharacters(in: .whitespaces)
+        let cal = Calendar.current
+        let now = Date()
+
+        switch lower {
+        case "today":
+            return cal.startOfDay(for: now)
+        case "yesterday":
+            return cal.startOfDay(for: cal.date(byAdding: .day, value: -1, to: now)!)
+        case "last-week":
+            return cal.startOfDay(for: cal.date(byAdding: .weekOfYear, value: -1, to: now)!)
+        case "last-month":
+            return cal.startOfDay(for: cal.date(byAdding: .month, value: -1, to: now)!)
+        case "last-year":
+            return cal.startOfDay(for: cal.date(byAdding: .year, value: -1, to: now)!)
+        default:
+            // Try YYYY-MM-DD
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            formatter.timeZone = TimeZone.current
+            return formatter.date(from: lower)
+        }
     }
 }

@@ -72,14 +72,25 @@ bcli tags                            Tag tree
 bcli sync                            Sync notes to local cache
 bcli sync --full                     Force full re-sync
 bcli search "query"                  Full-text search (title, tags, body)
-bcli search "query" --no-sync        Search without syncing first
+bcli search "query" --since yesterday  Filter by modification date
+bcli search "query" --since last-week  Relative dates supported
+bcli search "query" --since 2026-01-01 Absolute dates too
 bcli create "Title" -b "Body"        Create a note
 bcli create "Title" -t "t1,t2"       Create with tags
 bcli create "Title" --stdin          Pipe content from stdin
 bcli edit <id> --append "text"       Append to a note
+bcli edit <id> --append "text" --after "heading"  Insert after a heading
+bcli edit <id> --replace-section "heading" --section-content "new text"
 bcli edit <id> --editor              Open in $EDITOR
 bcli edit <id> --stdin               Replace content from stdin
+bcli archive <id>                    Archive a note
+bcli archive <id> --undo             Unarchive
 bcli trash <id>                      Move to trash
+bcli tag add <id> "work"             Add a tag to a note
+bcli tag remove <id> "work"          Remove a tag from a note
+bcli tag rename "old" "new"          Rename a tag across all notes
+bcli tag delete "old-tag"            Remove a tag from all notes
+bcli ls --untagged                   List notes with no tags
 bcli export ./dir                    Export all notes as markdown
 bcli export ./dir --frontmatter      Include YAML metadata
 bcli export ./dir --tag work         Export only matching tag
@@ -189,7 +200,13 @@ To remove it later: `bcli mcp uninstall`
 | `bear_create_note` | Create a new note with optional front matter |
 | `bear_edit_note` | Append, replace content, or edit front matter fields |
 | `bear_attach_file` | Upload and attach an image or file to a note |
+| `bear_archive_note` | Archive or unarchive a note |
 | `bear_trash_note` | Move a note to trash |
+| `bear_add_tag` | Add a tag to a note |
+| `bear_remove_tag` | Remove a tag from a note |
+| `bear_rename_tag` | Rename a tag across all notes |
+| `bear_delete_tag` | Delete a tag from all notes |
+| `bear_find_untagged` | List notes with no tags |
 | `bear_list_todos` | List notes with incomplete TODOs |
 | `bear_get_todos` | Get TODO items from a specific note |
 | `bear_toggle_todo` | Toggle a TODO item's completion |

@@ -88,6 +88,16 @@ export const tools: Record<string, ToolHandler> = {
             type: "number",
             description: "Maximum number of results (default 20)",
           },
+          since: {
+            type: "string",
+            description:
+              "Only notes modified after this date (YYYY-MM-DD, or: today, yesterday, last-week, last-month)",
+          },
+          before: {
+            type: "string",
+            description:
+              "Only notes modified before this date (YYYY-MM-DD)",
+          },
         },
         required: ["query"],
       },
@@ -95,6 +105,8 @@ export const tools: Record<string, ToolHandler> = {
     buildArgs: (input) => {
       const args = ["search", String(input.query), "--json"];
       if (input.limit) args.push("--limit", String(input.limit));
+      if (input.since) args.push("--since", String(input.since));
+      if (input.before) args.push("--before", String(input.before));
       return args;
     },
   },
@@ -181,6 +193,21 @@ export const tools: Record<string, ToolHandler> = {
             description:
               "New content to replace the entire note body",
           },
+          after: {
+            type: "string",
+            description:
+              "Insert appended text after the line containing this text (use with append_text)",
+          },
+          replace_section: {
+            type: "string",
+            description:
+              "Replace content under this heading (replaces until next heading of same or higher level)",
+          },
+          section_content: {
+            type: "string",
+            description:
+              "New content for the section (use with replace_section)",
+          },
           set_frontmatter: {
             type: "object",
             description:
@@ -222,14 +249,23 @@ export const tools: Record<string, ToolHandler> = {
         return args;
       }
 
+      // Section replacement mode
+      if (input.replace_section) {
+        const args = ["edit", String(input.id), "--replace-section", String(input.replace_section), "--json"];
+        if (input.section_content) args.push("--section-content", String(input.section_content));
+        return args;
+      }
+
       if (input.append_text) {
-        return [
+        const args = [
           "edit",
           String(input.id),
           "--append",
           String(input.append_text),
           "--json",
         ];
+        if (input.after) args.push("--after", String(input.after));
+        return args;
       }
       // --stdin case handled separately via usesStdin
       return ["edit", String(input.id), "--stdin", "--json"];
@@ -399,6 +435,166 @@ export const tools: Record<string, ToolHandler> = {
       if (input.after) args.push("--after", String(input.after));
       if (input.before) args.push("--before", String(input.before));
       if (input.prepend) args.push("--prepend");
+      return args;
+    },
+  },
+
+  bear_archive_note: {
+    tool: {
+      name: "bear_archive_note",
+      description:
+        "Archive a Bear note. Archived notes are hidden from the main list but not deleted. Use 'undo' to unarchive.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          id: {
+            type: "string",
+            description: "Note ID (uniqueIdentifier)",
+          },
+          undo: {
+            type: "boolean",
+            description: "Unarchive the note instead of archiving",
+          },
+        },
+        required: ["id"],
+      },
+    },
+    buildArgs: (input) => {
+      const args = ["archive", String(input.id), "--json"];
+      if (input.undo) args.push("--undo");
+      return args;
+    },
+  },
+
+  bear_add_tag: {
+    tool: {
+      name: "bear_add_tag",
+      description:
+        "Add a tag to an existing Bear note. The tag is inserted into the note's markdown.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          id: {
+            type: "string",
+            description: "Note ID (uniqueIdentifier)",
+          },
+          tag: {
+            type: "string",
+            description: "Tag to add (without #)",
+          },
+        },
+        required: ["id", "tag"],
+      },
+    },
+    buildArgs: (input) => [
+      "tag",
+      "add",
+      String(input.id),
+      String(input.tag),
+      "--json",
+    ],
+  },
+
+  bear_remove_tag: {
+    tool: {
+      name: "bear_remove_tag",
+      description:
+        "Remove a tag from a specific Bear note.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          id: {
+            type: "string",
+            description: "Note ID (uniqueIdentifier)",
+          },
+          tag: {
+            type: "string",
+            description: "Tag to remove (without #)",
+          },
+        },
+        required: ["id", "tag"],
+      },
+    },
+    buildArgs: (input) => [
+      "tag",
+      "remove",
+      String(input.id),
+      String(input.tag),
+      "--json",
+    ],
+  },
+
+  bear_rename_tag: {
+    tool: {
+      name: "bear_rename_tag",
+      description:
+        "Rename a tag across all Bear notes. Every note containing the old tag will be updated.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          old_name: {
+            type: "string",
+            description: "Current tag name (without #)",
+          },
+          new_name: {
+            type: "string",
+            description: "New tag name (without #)",
+          },
+        },
+        required: ["old_name", "new_name"],
+      },
+    },
+    buildArgs: (input) => [
+      "tag",
+      "rename",
+      String(input.old_name),
+      String(input.new_name),
+      "--json",
+    ],
+  },
+
+  bear_delete_tag: {
+    tool: {
+      name: "bear_delete_tag",
+      description:
+        "Delete a tag from all Bear notes. The tag text is removed but notes are preserved.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          tag: {
+            type: "string",
+            description: "Tag to delete (without #)",
+          },
+        },
+        required: ["tag"],
+      },
+    },
+    buildArgs: (input) => [
+      "tag",
+      "delete",
+      String(input.tag),
+      "--json",
+    ],
+  },
+
+  bear_find_untagged: {
+    tool: {
+      name: "bear_find_untagged",
+      description:
+        "List Bear notes that have no tags assigned.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          limit: {
+            type: "number",
+            description: "Maximum number of notes to return (default 30)",
+          },
+        },
+      },
+    },
+    buildArgs: (input) => {
+      const args = ["ls", "--untagged", "--json"];
+      if (input.limit) args.push("--limit", String(input.limit));
       return args;
     },
   },

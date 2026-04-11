@@ -10,8 +10,11 @@ public struct AttachFile: ParsableCommand {
     @Argument(help: "Note ID (uniqueIdentifier)")
     var noteID: String
 
-    @Argument(help: "Path to the file to attach")
+    @Argument(help: "Path to the file to attach (or filename when using --base64)")
     var filePath: String
+
+    @Option(name: .long, parsing: .unconditional, help: "Base64-encoded file content (alternative to file path)")
+    var base64: String?
 
     @Flag(name: .long, help: "Insert after the title line instead of at the end")
     var prepend: Bool = false
@@ -37,15 +40,28 @@ public struct AttachFile: ParsableCommand {
         let filePath = self.filePath
         let json = self.json
 
-        // Validate file exists
-        let fileURL = URL(fileURLWithPath: filePath)
-        guard FileManager.default.fileExists(atPath: fileURL.path) else {
-            throw BearCLIError.networkError("File not found: \(filePath)")
-        }
+        let fileData: Data
+        let fileName: String
+        let ext: String
 
-        let fileData = try Data(contentsOf: fileURL)
-        let fileName = fileURL.lastPathComponent
-        let ext = fileURL.pathExtension.lowercased()
+        if let b64 = self.base64 {
+            // Base64 mode: filePath is the filename, data comes from --base64
+            guard let decoded = Data(base64Encoded: b64) else {
+                throw BearCLIError.networkError("Invalid base64 data")
+            }
+            fileData = decoded
+            fileName = URL(fileURLWithPath: filePath).lastPathComponent
+            ext = URL(fileURLWithPath: filePath).pathExtension.lowercased()
+        } else {
+            // File path mode
+            let fileURL = URL(fileURLWithPath: filePath)
+            guard FileManager.default.fileExists(atPath: fileURL.path) else {
+                throw BearCLIError.networkError("File not found: \(filePath)")
+            }
+            fileData = try Data(contentsOf: fileURL)
+            fileName = fileURL.lastPathComponent
+            ext = fileURL.pathExtension.lowercased()
+        }
 
         // Determine MIME type
         let contentType = mimeType(for: ext)
