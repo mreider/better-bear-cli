@@ -1,4 +1,4 @@
-# better-bear-cli
+# better-bear
 
 [![Build](https://github.com/mreider/better-bear-cli/actions/workflows/build-on-merge.yml/badge.svg)](https://github.com/mreider/better-bear-cli/actions/workflows/build-on-merge.yml)
 [![Release](https://img.shields.io/github/v/release/mreider/better-bear-cli)](https://github.com/mreider/better-bear-cli/releases/latest)
