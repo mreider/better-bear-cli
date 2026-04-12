@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>better-bear-cli</title>
+  <meta name="description" content="A CLI and MCP server for Bear notes. Talk to your notes from the terminal or let AI assistants read, search, create, and edit them.">
+  <link rel="icon" href="better-bear.png" type="image/png">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg-code: #1e1e2e;
+      --text: #1a1a2e;
+      --text-muted: #6b7280;
+      --accent: #dd4c4f;
+      --accent-hover: #c43c3f;
+      --border: #e5e7eb;
+      --radius: 10px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f1117;
+        --text: #e2e8f0;
+        --text-muted: #94a3b8;
+        --accent: #dd4c4f;
+        --accent-hover: #e86568;
+        --border: #2d2d3d;
+      }
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 80px 0 40px;
+    }
+
+    .hero img {
+      width: 120px;
+      height: auto;
+      margin-bottom: 24px;
+    }
+
+    .hero h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+
+    .hero p {
+      font-size: 17px;
+      color: var(--text-muted);
+      max-width: 500px;
+      margin: 0 auto 32px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      border-radius: var(--radius);
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--text-muted);
+    }
+
+    /* Install */
+    .install {
+      padding: 40px 0;
+    }
+
+    .install-box {
+      background: var(--bg-code);
+      border-radius: 12px;
+      padding: 20px 24px;
+      position: relative;
+    }
+
+    .install-box code {
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 14px;
+      color: #e2e8f0;
+      line-height: 1.7;
+      display: block;
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    .install-box .copy-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: #94a3b8;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .install-box .copy-btn:hover {
+      background: rgba(255,255,255,0.2);
+      color: #e2e8f0;
+    }
+
+    /* Sections */
+    section {
+      padding: 32px 0;
+    }
+
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      letter-spacing: -0.3px;
+    }
+
+    h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      margin-top: 20px;
+    }
+
+    p, li {
+      font-size: 15px;
+      color: var(--text-muted);
+    }
+
+    ul {
+      padding-left: 20px;
+      margin-bottom: 16px;
+    }
+
+    li {
+      margin-bottom: 6px;
+    }
+
+    /* Features grid */
+    .features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .feature {
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .feature h3 {
+      margin-top: 0;
+      color: var(--text);
+    }
+
+    .feature p {
+      font-size: 14px;
+      margin: 0;
+    }
+
+    /* Code inline */
+    code:not(.install-box code) {
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 13px;
+      background: rgba(127,127,127,0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* Commands table */
+    .commands {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    .commands td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    .commands td:first-child {
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 13px;
+      white-space: nowrap;
+      color: var(--text);
+    }
+
+    .commands td:last-child {
+      color: var(--text-muted);
+    }
+
+    /* Footer */
+    footer {
+      padding: 40px 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    footer a {
+      color: var(--text-muted);
+      text-decoration: underline;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .hero { padding: 48px 0 24px; }
+      .hero h1 { font-size: 26px; }
+      .features { grid-template-columns: 1fr; }
+      .commands td:first-child { white-space: normal; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <img src="better-bear.png" alt="better-bear-cli">
+      <h1>better-bear-cli</h1>
+      <p>A CLI and MCP server for <a href="https://bear.app" style="color: var(--accent);">Bear</a> notes. Talk to your notes from the terminal or let AI assistants read, search, and edit them via CloudKit.</p>
+      <div class="hero-actions">
+        <a href="https://github.com/mreider/better-bear-cli/releases/latest" class="btn btn-primary">Download</a>
+        <a href="https://github.com/mreider/better-bear-cli" class="btn btn-secondary">GitHub</a>
+      </div>
+    </div>
+
+    <div class="install">
+      <div class="install-box">
+        <button class="copy-btn" onclick="navigator.clipboard.writeText('curl -sL https://raw.githubusercontent.com/mreider/better-bear-cli/main/install.sh | bash');this.textContent='Copied!'">Copy</button>
+        <code>curl -sL https://raw.githubusercontent.com/mreider/better-bear-cli/main/install.sh | bash</code>
+      </div>
+    </div>
+
+    <section>
+      <div class="features">
+        <div class="feature">
+          <h3>CLI</h3>
+          <p>Create, search, edit, tag, and attach files to Bear notes from the terminal. Works without Bear open.</p>
+        </div>
+        <div class="feature">
+          <h3>MCP Server</h3>
+          <p>19 tools for Claude Desktop. Let AI read, write, and organize your Bear notes directly.</p>
+        </div>
+        <div class="feature">
+          <h3>CloudKit API</h3>
+          <p>Same REST API Bear Web uses. No SQLite hacking, no x-callback-url. Syncs to all devices.</p>
+        </div>
+        <div class="feature">
+          <h3>Open Source</h3>
+          <p>MIT licensed. Contributions welcome. <a href="https://buymeacoffee.com/mreider" style="color: var(--accent);">Buy me a coffee</a> if you find it useful.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Commands</h2>
+      <table class="commands">
+        <tr><td>bcli ls</td><td>List notes</td></tr>
+        <tr><td>bcli search "query"</td><td>Full-text search with date filters</td></tr>
+        <tr><td>bcli get &lt;id&gt;</td><td>View a note (includes parsed front matter)</td></tr>
+        <tr><td>bcli create "Title"</td><td>Create a note with tags and front matter</td></tr>
+        <tr><td>bcli edit &lt;id&gt;</td><td>Append, replace, or edit sections and front matter</td></tr>
+        <tr><td>bcli attach &lt;id&gt; file</td><td>Upload images and files to iCloud</td></tr>
+        <tr><td>bcli tag add/remove/rename/delete</td><td>Manage tags across notes</td></tr>
+        <tr><td>bcli archive &lt;id&gt;</td><td>Archive or unarchive</td></tr>
+        <tr><td>bcli trash &lt;id&gt;</td><td>Move to trash</td></tr>
+        <tr><td>bcli todo</td><td>List and toggle TODO items</td></tr>
+        <tr><td>bcli export ./dir</td><td>Export notes as markdown</td></tr>
+        <tr><td>bcli upgrade</td><td>Self-update to latest release</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>MCP Server</h2>
+      <p>Install the MCP server for <a href="https://claude.ai/download" style="color: var(--accent);">Claude Desktop</a>:</p>
+      <div class="install-box" style="margin-top: 12px;">
+        <code>cd mcp-server && npm install && npm run build && cd ..
+bcli mcp install</code>
+      </div>
+      <p style="margin-top: 12px;">19 tools including notes, tags, search, attachments, TODOs, front matter, and archive. Restart Claude Desktop after installing.</p>
+    </section>
+
+    <footer>
+      <a href="https://github.com/mreider/better-bear-cli">GitHub</a> &middot;
+      <a href="https://github.com/mreider/better-bear-cli/issues">Issues</a> &middot;
+      <a href="https://buymeacoffee.com/mreider">Support</a>
+    </footer>
+  </div>
+</body>
+</html>
