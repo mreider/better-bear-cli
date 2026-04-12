@@ -599,6 +599,32 @@ export const tools: Record<string, ToolHandler> = {
     },
   },
 
+  bear_note_stats: {
+    tool: {
+      name: "bear_note_stats",
+      description:
+        "Get statistics about the Bear notes library: total notes, words, tags, pinned, archived, trashed, notes with TODOs, oldest/newest dates, and top 10 tags by note count.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {},
+      },
+    },
+    buildArgs: () => ["stats", "--json"],
+  },
+
+  bear_find_duplicates: {
+    tool: {
+      name: "bear_find_duplicates",
+      description:
+        "Find notes with duplicate titles. Returns groups of notes sharing the same title with their IDs and modification dates. Useful for cleaning up after imports or sync conflicts.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {},
+      },
+    },
+    buildArgs: () => ["duplicates", "--json"],
+  },
+
   bear_health_check: {
     tool: {
       name: "bear_health_check",
