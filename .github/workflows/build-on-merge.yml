@@ -32,6 +32,12 @@ jobs:
             echo "tag=${prefix}.$((patch + 1))" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Inject version into source
+        run: |
+          VERSION="${{ steps.version.outputs.tag }}"
+          VERSION_NUM="${VERSION#v}"
+          sed -i '' "s/public static let appVersion = \".*\"/public static let appVersion = \"${VERSION_NUM}\"/" Sources/BearCLICore/Exports.swift
+
       - name: Build release binary
         run: swift build -c release --arch arm64 --arch x86_64
 
