@@ -60,22 +60,21 @@
     .feature h3 { margin-top: 0; }
     .feature p { font-size: 14px; margin: 0; }
     code:not(.code-block code) { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 13px; background: rgba(127,127,127,0.1); padding: 2px 6px; border-radius: 4px; }
-    .commands { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
-    .commands td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
-    .commands td:first-child { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 13px; white-space: nowrap; color: var(--text); }
-    .commands td:last-child { color: var(--text-muted); }
-    .mcp-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
-    .mcp-table td { padding: 6px 12px; border-bottom: 1px solid var(--border); }
-    .mcp-table td:first-child { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 13px; color: var(--text); white-space: nowrap; }
-    .mcp-table td:last-child { color: var(--text-muted); }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+    td { padding: 6px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    td:first-child { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 13px; color: var(--text); white-space: nowrap; }
+    td:last-child { color: var(--text-muted); }
     hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
     footer { padding: 40px 0; text-align: center; color: var(--text-muted); font-size: 14px; }
     footer a { color: var(--text-muted); text-decoration: underline; }
+    .coffee { text-align: center; padding: 32px 0; }
+    .coffee a { display: inline-block; transition: opacity 0.2s; }
+    .coffee a:hover { opacity: 0.8; }
     @media (max-width: 600px) {
       .hero { padding: 48px 0 24px; }
       .hero h1 { font-size: 26px; }
       .features { grid-template-columns: 1fr; }
-      .commands td:first-child, .mcp-table td:first-child { white-space: normal; }
+      td:first-child { white-space: normal; }
     }
   </style>
 </head>
@@ -113,7 +112,7 @@
       </div>
       <div class="feature">
         <h3>Open Source</h3>
-        <p>MIT licensed. <a href="https://buymeacoffee.com/mreider">Buy me a coffee</a> if it's useful.</p>
+        <p>MIT licensed. Universal macOS binary. Swift 5.9+.</p>
       </div>
     </div>
   </section>
@@ -126,7 +125,8 @@
     <div class="code-block"><code>curl -sL https://raw.githubusercontent.com/mreider/better-bear-cli/main/install.sh | bash</code></div>
 
     <h3>Upgrade</h3>
-    <div class="code-block"><code>bcli upgrade</code></div>
+    <div class="code-block"><code>bcli upgrade         # download and replace with latest
+bcli upgrade --check # check without installing</code></div>
     <p>After upgrading, run <code>hash -r</code> or open a new terminal. Restart Claude Desktop if you use the MCP server.</p>
 
     <h3>Download manually</h3>
@@ -137,6 +137,7 @@ mv bcli ~/.local/bin/bcli
 rm bcli.tar.gz</code></div>
 
     <h3>Build from source</h3>
+    <p>Requires Swift 5.9+.</p>
     <div class="code-block"><code>git clone https://github.com/mreider/better-bear-cli.git
 cd better-bear-cli
 swift build -c release
@@ -148,47 +149,107 @@ cp .build/release/bcli ~/.local/bin/bcli</code></div>
   <section>
     <h2>Auth</h2>
     <div class="code-block"><code>bcli auth</code></div>
-    <p>Opens your browser for Apple Sign-In via CloudKit JS. The token is saved to <code>~/.config/bear-cli/auth.json</code>.</p>
+    <p>Opens your browser for Apple Sign-In via CloudKit JS. Token saved to <code>~/.config/bear-cli/auth.json</code>. You can also pass a token directly with <code>bcli auth --token '&lt;token&gt;'</code>.</p>
   </section>
 
   <hr>
 
   <section>
     <h2>Commands</h2>
-    <table class="commands">
+
+    <h3>Notes</h3>
+    <table>
       <tr><td>bcli ls</td><td>List notes</td></tr>
-      <tr><td>bcli ls --tag work --json</td><td>Filter by tag, JSON output</td></tr>
+      <tr><td>bcli ls --all --tag work --json</td><td>Filter by tag, show all, JSON output</td></tr>
       <tr><td>bcli ls --untagged</td><td>List notes with no tags</td></tr>
+      <tr><td>bcli ls --archived</td><td>List archived notes</td></tr>
+      <tr><td>bcli ls --trashed</td><td>List trashed notes</td></tr>
       <tr><td>bcli get &lt;id&gt;</td><td>View note with metadata</td></tr>
       <tr><td>bcli get &lt;id&gt; --raw</td><td>Just the markdown</td></tr>
-      <tr><td>bcli tags</td><td>Tag tree</td></tr>
-      <tr><td>bcli sync</td><td>Sync notes to local cache</td></tr>
-      <tr><td>bcli search "query"</td><td>Full-text search</td></tr>
-      <tr><td>bcli search "q" --since yesterday</td><td>Date filter (today, yesterday, last-week, last-month, YYYY-MM-DD)</td></tr>
+      <tr><td>bcli get &lt;id&gt; --json</td><td>JSON output (includes parsed front matter)</td></tr>
+    </table>
+
+    <h3>Search</h3>
+    <table>
+      <tr><td>bcli search "query"</td><td>Full-text search (title, tags, body)</td></tr>
+      <tr><td>bcli search "q" --since yesterday</td><td>Modified after date</td></tr>
+      <tr><td>bcli search "q" --since last-week</td><td>Relative: today, yesterday, last-week, last-month, last-year</td></tr>
+      <tr><td>bcli search "q" --since 2026-01-01</td><td>Absolute: YYYY-MM-DD</td></tr>
+      <tr><td>bcli search "q" --before 2026-06-01</td><td>Modified before date</td></tr>
+      <tr><td>bcli search "q" --no-sync</td><td>Search without syncing first</td></tr>
+    </table>
+
+    <h3>Create</h3>
+    <table>
       <tr><td>bcli create "Title" -b "Body"</td><td>Create a note</td></tr>
-      <tr><td>bcli create "T" -t "t1,t2"</td><td>Create with tags</td></tr>
-      <tr><td>bcli create "T" --fm "status=draft"</td><td>Create with YAML front matter</td></tr>
-      <tr><td>bcli edit &lt;id&gt; --append "text"</td><td>Append to a note</td></tr>
-      <tr><td>bcli edit &lt;id&gt; --append "x" --after "heading"</td><td>Insert after a heading</td></tr>
-      <tr><td>bcli edit &lt;id&gt; --replace-section "H" --section-content "new"</td><td>Replace section content</td></tr>
-      <tr><td>bcli edit &lt;id&gt; --set-fm "status=done"</td><td>Edit front matter</td></tr>
-      <tr><td>bcli edit &lt;id&gt; --remove-fm "draft"</td><td>Remove front matter field</td></tr>
+      <tr><td>bcli create "Title" -t "t1,t2"</td><td>Create with tags</td></tr>
+      <tr><td>bcli create "Title" --stdin</td><td>Pipe content from stdin</td></tr>
+      <tr><td>bcli create "Title" --fm "status=draft" "project=alpha"</td><td>Create with YAML front matter</td></tr>
+    </table>
+
+    <h3>Edit</h3>
+    <table>
+      <tr><td>bcli edit &lt;id&gt; --append "text"</td><td>Append to end of note</td></tr>
+      <tr><td>bcli edit &lt;id&gt; --append "text" --after "Heading"</td><td>Insert after a heading or text</td></tr>
+      <tr><td>bcli edit &lt;id&gt; --replace-section "Heading" --section-content "new"</td><td>Replace content under a heading</td></tr>
       <tr><td>bcli edit &lt;id&gt; --editor</td><td>Open in $EDITOR</td></tr>
-      <tr><td>bcli edit &lt;id&gt; --stdin</td><td>Replace from stdin</td></tr>
-      <tr><td>bcli attach &lt;id&gt; photo.jpg</td><td>Attach image (uploads to iCloud)</td></tr>
-      <tr><td>bcli attach &lt;id&gt; img.png --after "Profile"</td><td>Insert after heading</td></tr>
+      <tr><td>bcli edit &lt;id&gt; --stdin</td><td>Replace entire content from stdin</td></tr>
+      <tr><td>bcli edit &lt;id&gt; --set-fm "status=done" "reviewed=true"</td><td>Set front matter fields</td></tr>
+      <tr><td>bcli edit &lt;id&gt; --remove-fm "draft"</td><td>Remove front matter fields</td></tr>
+    </table>
+
+    <h3>Attachments</h3>
+    <table>
+      <tr><td>bcli attach &lt;id&gt; photo.jpg</td><td>Upload image to iCloud, embed in note</td></tr>
+      <tr><td>bcli attach &lt;id&gt; doc.pdf</td><td>Attach any file type</td></tr>
+      <tr><td>bcli attach &lt;id&gt; img.png --prepend</td><td>Insert after the title</td></tr>
+      <tr><td>bcli attach &lt;id&gt; img.png --after "Profile"</td><td>Insert after a heading or text</td></tr>
+      <tr><td>bcli attach &lt;id&gt; img.png --before "Footer"</td><td>Insert before a heading or text</td></tr>
+      <tr><td>bcli attach &lt;id&gt; img.png --at-line 5</td><td>Insert after line 5</td></tr>
+      <tr><td>bcli attach name.png --base64 &lt;data&gt;</td><td>Attach from base64 data (for programmatic use)</td></tr>
+    </table>
+
+    <h3>Tags</h3>
+    <table>
+      <tr><td>bcli tags</td><td>Tag tree with counts</td></tr>
+      <tr><td>bcli tag add &lt;id&gt; "work"</td><td>Add tag to a note</td></tr>
+      <tr><td>bcli tag remove &lt;id&gt; "work"</td><td>Remove tag from a note</td></tr>
+      <tr><td>bcli tag rename "old" "new"</td><td>Rename tag across all notes</td></tr>
+      <tr><td>bcli tag delete "tag"</td><td>Remove tag from all notes</td></tr>
+    </table>
+
+    <h3>Archive &amp; Trash</h3>
+    <table>
       <tr><td>bcli archive &lt;id&gt;</td><td>Archive a note</td></tr>
       <tr><td>bcli archive &lt;id&gt; --undo</td><td>Unarchive</td></tr>
       <tr><td>bcli trash &lt;id&gt;</td><td>Move to trash</td></tr>
-      <tr><td>bcli tag add &lt;id&gt; "work"</td><td>Add tag to note</td></tr>
-      <tr><td>bcli tag remove &lt;id&gt; "work"</td><td>Remove tag from note</td></tr>
-      <tr><td>bcli tag rename "old" "new"</td><td>Rename tag across all notes</td></tr>
-      <tr><td>bcli tag delete "tag"</td><td>Remove tag from all notes</td></tr>
+    </table>
+
+    <h3>TODOs</h3>
+    <table>
       <tr><td>bcli todo</td><td>List notes with incomplete TODOs</td></tr>
-      <tr><td>bcli todo &lt;id&gt; --toggle 3</td><td>Toggle a TODO item</td></tr>
-      <tr><td>bcli export ./dir</td><td>Export as markdown</td></tr>
-      <tr><td>bcli export ./dir --frontmatter</td><td>Include YAML metadata</td></tr>
-      <tr><td>bcli upgrade</td><td>Self-update to latest</td></tr>
+      <tr><td>bcli todo --limit 10</td><td>Limit results</td></tr>
+      <tr><td>bcli todo &lt;id&gt;</td><td>View TODOs in a note (interactive toggle)</td></tr>
+      <tr><td>bcli todo &lt;id&gt; --toggle 3</td><td>Toggle item 3 without prompting</td></tr>
+      <tr><td>bcli todo --json</td><td>JSON output</td></tr>
+      <tr><td>bcli todo --no-sync</td><td>Skip auto-sync</td></tr>
+    </table>
+
+    <h3>Export</h3>
+    <table>
+      <tr><td>bcli export ./dir</td><td>Export all notes as markdown</td></tr>
+      <tr><td>bcli export ./dir --frontmatter</td><td>Include YAML metadata (merges with existing front matter)</td></tr>
+      <tr><td>bcli export ./dir --tag work</td><td>Export only matching tag</td></tr>
+    </table>
+
+    <h3>Sync &amp; Config</h3>
+    <table>
+      <tr><td>bcli sync</td><td>Sync notes to local cache</td></tr>
+      <tr><td>bcli sync --full</td><td>Force full re-sync</td></tr>
+      <tr><td>bcli upgrade</td><td>Self-update to latest release</td></tr>
+      <tr><td>bcli upgrade --check</td><td>Check for updates without installing</td></tr>
+      <tr><td>bcli mcp install</td><td>Install MCP server into Claude Desktop</td></tr>
+      <tr><td>bcli mcp uninstall</td><td>Remove MCP server from Claude Desktop</td></tr>
     </table>
   </section>
 
@@ -204,15 +265,15 @@ bcli mcp install
     <p>To remove: <code>bcli mcp uninstall</code></p>
 
     <h3>Tools</h3>
-    <table class="mcp-table">
+    <table>
       <tr><td>bear_sync</td><td>Sync notes from iCloud</td></tr>
-      <tr><td>bear_list_notes</td><td>List notes with tag filter</td></tr>
+      <tr><td>bear_list_notes</td><td>List notes with tag filter, include archived/trashed</td></tr>
       <tr><td>bear_get_note</td><td>Full content by ID (includes parsed front matter)</td></tr>
-      <tr><td>bear_search</td><td>Full-text search with date filters</td></tr>
-      <tr><td>bear_get_tags</td><td>Tag hierarchy</td></tr>
+      <tr><td>bear_search</td><td>Full-text search with since/before date filters</td></tr>
+      <tr><td>bear_get_tags</td><td>Tag hierarchy with counts</td></tr>
       <tr><td>bear_create_note</td><td>Create with tags and front matter</td></tr>
-      <tr><td>bear_edit_note</td><td>Append, replace, section edit, front matter</td></tr>
-      <tr><td>bear_attach_file</td><td>Upload image/file to iCloud</td></tr>
+      <tr><td>bear_edit_note</td><td>Append, replace, section edit, front matter set/remove</td></tr>
+      <tr><td>bear_attach_file</td><td>Upload image/file to iCloud with placement options</td></tr>
       <tr><td>bear_archive_note</td><td>Archive or unarchive</td></tr>
       <tr><td>bear_trash_note</td><td>Move to trash</td></tr>
       <tr><td>bear_add_tag</td><td>Add tag to note</td></tr>
@@ -231,8 +292,12 @@ bcli mcp install
 
   <section>
     <h2>How it works</h2>
-    <p>This CLI uses the same CloudKit REST API that <a href="https://web.bear.app">Bear Web</a> uses. Notes live in your iCloud private database. Authentication uses the iCloud web auth token flow. The CLI does not touch Bear's local SQLite database — it's safe to use with Bear open.</p>
+    <p>This CLI uses the same CloudKit REST API that <a href="https://web.bear.app">Bear Web</a> uses. Notes live in your iCloud private database under <code>iCloud.net.shinyfrog.bear</code>. Authentication uses the iCloud web auth token flow. The CLI does not touch Bear's local SQLite database — it's safe to use with Bear open on any device.</p>
   </section>
+
+  <div class="coffee">
+    <a href="https://buymeacoffee.com/mreider"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="48"></a>
+  </div>
 
   <footer>
     <a href="https://github.com/mreider/better-bear-cli">GitHub</a> &middot;
