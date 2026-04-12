@@ -5,7 +5,7 @@ public struct BearCLI: ParsableCommand {
     public static let configuration = CommandConfiguration(
         commandName: "bcli",
         abstract: "CLI for Bear notes via CloudKit",
-        version: "0.4.0",
+        version: BearCLI.appVersion,
         subcommands: [
             AuthCommand.self,
             ListNotes.self,
@@ -29,6 +29,9 @@ public struct BearCLI: ParsableCommand {
             ConfigCommand.self,
         ]
     )
+
+    // Injected by CI at build time via sed; falls back to "dev" for local builds
+    public static let appVersion = "0.4.0"
 
     public init() {}
 }
