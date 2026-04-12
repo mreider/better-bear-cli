@@ -18,6 +18,7 @@ public struct BearCLI: ParsableCommand {
             TrashNote.self,
             TagCommand.self,
             TodoCommand.self,
+            HealthCommand.self,
             AttachFile.self,
             ExportNotes.self,
             SyncCommand.self,

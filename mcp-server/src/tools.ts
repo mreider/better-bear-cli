@@ -598,4 +598,17 @@ export const tools: Record<string, ToolHandler> = {
       return args;
     },
   },
+
+  bear_health_check: {
+    tool: {
+      name: "bear_health_check",
+      description:
+        "Run a health check on the Bear notes library. Reports duplicate titles, empty notes, notes stuck in trash, sync conflicts, orphaned tags, untagged notes, and oversized notes. Use this to identify cleanup opportunities or diagnose sync issues.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {},
+      },
+    },
+    buildArgs: () => ["health", "--json"],
+  },
 };

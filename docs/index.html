@@ -104,7 +104,7 @@
       </div>
       <div class="feature">
         <h3>MCP Server</h3>
-        <p>19 tools for Claude Desktop. Let AI read, write, and organize your Bear notes.</p>
+        <p>20 tools for Claude Desktop. Let AI read, write, and organize your Bear notes.</p>
       </div>
       <div class="feature">
         <h3>CloudKit API</h3>
@@ -246,6 +246,8 @@ cp .build/release/bcli ~/.local/bin/bcli</code></div>
     <table>
       <tr><td>bcli sync</td><td>Sync notes to local cache</td></tr>
       <tr><td>bcli sync --full</td><td>Force full re-sync</td></tr>
+      <tr><td>bcli health</td><td>Health report: duplicates, empties, orphans, conflicts</td></tr>
+      <tr><td>bcli health --json</td><td>JSON output for scripting/MCP</td></tr>
       <tr><td>bcli upgrade</td><td>Self-update to latest release</td></tr>
       <tr><td>bcli upgrade --check</td><td>Check for updates without installing</td></tr>
       <tr><td>bcli mcp install</td><td>Install MCP server into Claude Desktop</td></tr>
@@ -257,7 +259,7 @@ cp .build/release/bcli ~/.local/bin/bcli</code></div>
 
   <section>
     <h2>MCP Server (Claude Desktop)</h2>
-    <p>19 tools that let Claude read, search, create, edit, tag, and attach files to your Bear notes.</p>
+    <p>20 tools that let Claude read, search, create, edit, tag, and attach files to your Bear notes.</p>
     <h3>Setup</h3>
     <div class="code-block"><code>cd mcp-server && npm install && npm run build && cd ..
 bcli mcp install
@@ -284,6 +286,7 @@ bcli mcp install
       <tr><td>bear_list_todos</td><td>Notes with incomplete TODOs</td></tr>
       <tr><td>bear_get_todos</td><td>TODO items from a note</td></tr>
       <tr><td>bear_toggle_todo</td><td>Toggle TODO completion</td></tr>
+      <tr><td>bear_health_check</td><td>Library health: duplicates, empties, orphans, conflicts</td></tr>
     </table>
     <p style="margin-top: 12px;">Locked/private notes show <code>locked: true</code> in results. Their body content may not be searchable.</p>
   </section>
@@ -304,6 +307,7 @@ bcli mcp install
       <tr><td>weekly-review.sh</td><td>Summary of notes modified this week</td></tr>
       <tr><td>import-markdown.sh</td><td>Import a folder of .md files as notes</td></tr>
       <tr><td>note-stats.sh</td><td>Library stats: counts, tags, dates, TODOs</td></tr>
+      <tr><td>health-check.sh</td><td>Health report with actionable warnings</td></tr>
     </table>
   </section>
 
