@@ -8,73 +8,83 @@
   <link rel="icon" href="better-bear.png" type="image/png">
   <style>
     :root {
-      --bg: #ffffff;
-      --bg-code: #1e1e2e;
-      --text: #1a1a2e;
-      --text-muted: #6b7280;
-      --accent: #dd4c4f;
-      --accent-hover: #c43c3f;
-      --border: #e5e7eb;
-      --radius: 10px;
+      --bg: #ffffff; --bg-code: #1e1e2e; --text: #1a1a2e; --text-muted: #6b7280;
+      --accent: #dd4c4f; --accent-hover: #c43c3f; --border: #e5e7eb; --radius: 10px;
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #0f1117;
-        --text: #e2e8f0;
-        --text-muted: #94a3b8;
-        --accent: #dd4c4f;
-        --accent-hover: #e86568;
-        --border: #2d2d3d;
+        --bg: #0f1117; --text: #e2e8f0; --text-muted: #94a3b8;
+        --accent: #dd4c4f; --accent-hover: #e86568; --border: #2d2d3d;
       }
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--bg); color: var(--text); line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
-    }
-    .container { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
     a { color: var(--accent); }
-    .hero { text-align: center; padding: 80px 0 40px; }
-    .hero img { width: 120px; height: auto; margin-bottom: 24px; }
-    .hero h1 { font-size: 32px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px; }
-    .hero p { font-size: 17px; color: var(--text-muted); max-width: 520px; margin: 0 auto 32px; }
+
+    /* Hero */
+    .hero { text-align: center; padding: 60px 0 32px; }
+    .hero img { width: 100px; height: auto; margin-bottom: 16px; }
+    .hero h1 { font-size: 30px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.5px; }
+    .hero p { font-size: 16px; color: var(--text-muted); max-width: 520px; margin: 0 auto 24px; }
     .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 28px; border-radius: var(--radius); font-size: 15px; font-weight: 600; text-decoration: none; transition: background 0.2s; }
+    .btn { display: inline-flex; align-items: center; padding: 10px 24px; border-radius: var(--radius); font-size: 14px; font-weight: 600; text-decoration: none; transition: background 0.2s; }
     .btn-primary { background: var(--accent); color: #fff; }
     .btn-primary:hover { background: var(--accent-hover); }
     .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
     .btn-secondary:hover { border-color: var(--text-muted); }
-    .code-block { background: var(--bg-code); border-radius: 12px; padding: 20px 24px; position: relative; margin: 12px 0; }
-    .code-block code { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 14px; color: #e2e8f0; line-height: 1.7; display: block; white-space: pre; overflow-x: auto; }
-    .code-block .copy-btn { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #cbd5e1; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit; }
+
+    /* Install box */
+    .code-block { background: var(--bg-code); border-radius: 10px; padding: 14px 20px; position: relative; margin: 10px 0; }
+    .code-block code { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 13px; color: #e2e8f0; line-height: 1.6; display: block; white-space: pre; overflow-x: auto; }
+    .code-block .copy-btn { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #cbd5e1; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-family: inherit; }
     .code-block .copy-btn:hover { background: rgba(255,255,255,0.25); color: #fff; border-color: rgba(255,255,255,0.4); }
-    section { padding: 32px 0; }
-    h2 { font-size: 20px; font-weight: 700; margin-bottom: 16px; letter-spacing: -0.3px; }
-    h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; margin-top: 20px; color: var(--text); }
-    p, li { font-size: 15px; color: var(--text-muted); margin-bottom: 8px; }
-    ul { padding-left: 20px; margin-bottom: 16px; }
-    li { margin-bottom: 6px; }
-    .features { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
-    .feature { padding: 16px; border: 1px solid var(--border); border-radius: 12px; }
-    .feature h3 { margin-top: 0; }
-    .feature p { font-size: 14px; margin: 0; }
-    code:not(.code-block code) { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 13px; background: rgba(127,127,127,0.1); padding: 2px 6px; border-radius: 4px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
-    td { padding: 6px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
-    td:first-child { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 13px; color: var(--text); white-space: nowrap; }
+
+    /* TOC */
+    .toc { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px 16px; padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+    .toc a { font-size: 13px; color: var(--text-muted); text-decoration: none; padding: 4px 0; display: block; }
+    .toc a:hover { color: var(--accent); }
+
+    /* Features */
+    .features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0 24px; }
+    .feature { padding: 14px; border: 1px solid var(--border); border-radius: 10px; }
+    .feature h3 { font-size: 14px; font-weight: 600; margin: 0 0 4px; color: var(--text); }
+    .feature p { font-size: 13px; margin: 0; color: var(--text-muted); }
+
+    /* Sections */
+    section { padding: 20px 0; }
+    h2 { font-size: 18px; font-weight: 700; margin-bottom: 10px; letter-spacing: -0.3px; }
+    h3 { font-size: 14px; font-weight: 600; margin: 14px 0 6px; color: var(--text); }
+    p, li { font-size: 14px; color: var(--text-muted); margin-bottom: 6px; }
+    ul { padding-left: 20px; margin-bottom: 10px; }
+    code:not(.code-block code) { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 12px; background: rgba(127,127,127,0.1); padding: 2px 5px; border-radius: 3px; }
+    hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 13px; }
+    td { padding: 4px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    td:first-child { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 12px; color: var(--text); white-space: nowrap; }
     td:last-child { color: var(--text-muted); }
-    hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
-    footer { padding: 40px 0; text-align: center; color: var(--text-muted); font-size: 14px; }
-    footer a { color: var(--text-muted); text-decoration: underline; }
-    .coffee { text-align: center; padding: 32px 0; }
+
+    /* Two-column tables */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
+    .two-col table { margin: 0; }
+
+    /* Footer */
+    .coffee { text-align: center; padding: 24px 0; }
     .coffee a { display: inline-block; transition: opacity 0.2s; }
     .coffee a:hover { opacity: 0.8; }
-    @media (max-width: 600px) {
-      .hero { padding: 48px 0 24px; }
-      .hero h1 { font-size: 26px; }
-      .features { grid-template-columns: 1fr; }
+    footer { padding: 24px 0; text-align: center; color: var(--text-muted); font-size: 13px; }
+    footer a { color: var(--text-muted); text-decoration: underline; }
+
+    @media (max-width: 700px) {
+      .toc { grid-template-columns: repeat(2, 1fr); }
+      .features { grid-template-columns: 1fr 1fr; }
+      .two-col { grid-template-columns: 1fr; }
       td:first-child { white-space: normal; }
+    }
+    @media (max-width: 480px) {
+      .features { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -82,9 +92,9 @@
 <div class="container">
 
   <div class="hero">
-    <img src="better-bear.png" alt="better-bear-cli">
+    <img src="better-bear.png" alt="better bear">
     <h1>better bear</h1>
-    <p>A CLI and MCP server for <a href="https://bear.app">Bear</a> notes. Talk to your notes from the terminal or let AI assistants read, search, and edit them via CloudKit.</p>
+    <p>A CLI and MCP server for <a href="https://bear.app">Bear</a> notes via CloudKit. Use it from the terminal or let Claude read, search, and edit your notes.</p>
     <div class="hero-actions">
       <a href="https://github.com/mreider/better-bear-cli/releases/latest" class="btn btn-primary">Download</a>
       <a href="https://github.com/mreider/better-bear-cli" class="btn btn-secondary">GitHub</a>
@@ -96,230 +106,244 @@
     <code>curl -sL https://raw.githubusercontent.com/mreider/better-bear-cli/main/install.sh | bash</code>
   </div>
 
-  <section>
-    <div class="features">
-      <div class="feature">
-        <h3>CLI</h3>
-        <p>Create, search, edit, tag, attach files, and manage TODOs from the terminal. Works without Bear open.</p>
+  <nav class="toc">
+    <a href="#install">Install &amp; Upgrade</a>
+    <a href="#notes">Notes &amp; Search</a>
+    <a href="#create">Create &amp; Edit</a>
+    <a href="#attachments">Attachments</a>
+    <a href="#tags">Tags</a>
+    <a href="#organize">Archive, Trash &amp; TODOs</a>
+    <a href="#frontmatter">Front Matter</a>
+    <a href="#tools">Library Tools</a>
+    <a href="#mcp">MCP Server</a>
+    <a href="#scripts">Scripts</a>
+    <a href="#how">How It Works</a>
+    <a href="#support">Support</a>
+  </nav>
+
+  <div class="features">
+    <div class="feature"><h3>CLI</h3><p>Create, search, edit, tag, and attach files from the terminal.</p></div>
+    <div class="feature"><h3>MCP Server</h3><p>22 tools for Claude Desktop to manage your notes.</p></div>
+    <div class="feature"><h3>CloudKit</h3><p>Same API as Bear Web. Syncs to all devices.</p></div>
+    <div class="feature"><h3>Open Source</h3><p>MIT licensed. Universal macOS binary.</p></div>
+  </div>
+
+  <hr>
+
+  <section id="install">
+    <h2>Install &amp; Upgrade</h2>
+    <div class="two-col">
+      <div>
+        <h3>Quick install</h3>
+        <div class="code-block"><code>curl -sL https://raw.githubusercontent.com/mreider/better-bear-cli/main/install.sh | bash
+bcli auth</code></div>
+        <h3>Build from source</h3>
+        <div class="code-block"><code>git clone https://github.com/mreider/better-bear-cli.git
+cd better-bear-cli && swift build -c release
+cp .build/release/bcli ~/.local/bin/bcli</code></div>
       </div>
-      <div class="feature">
-        <h3>MCP Server</h3>
-        <p>20 tools for Claude Desktop. Let AI read, write, and organize your Bear notes.</p>
-      </div>
-      <div class="feature">
-        <h3>CloudKit API</h3>
-        <p>Same REST API Bear Web uses. No SQLite, no x-callback-url. Syncs to all devices.</p>
-      </div>
-      <div class="feature">
-        <h3>Open Source</h3>
-        <p>MIT licensed. Universal macOS binary. Swift 5.9+.</p>
+      <div>
+        <h3>Upgrade</h3>
+        <div class="code-block"><code>bcli upgrade         # download latest
+bcli upgrade --check # check only</code></div>
+        <p>Run <code>hash -r</code> after upgrading. Restart Claude Desktop if using MCP.</p>
+        <h3>Auth</h3>
+        <div class="code-block"><code>bcli auth</code></div>
+        <p>Apple Sign-In via CloudKit JS. Token saved to <code>~/.config/bear-cli/auth.json</code>.</p>
       </div>
     </div>
   </section>
 
   <hr>
 
-  <section>
-    <h2>Install</h2>
-    <h3>Quick install</h3>
-    <div class="code-block"><code>curl -sL https://raw.githubusercontent.com/mreider/better-bear-cli/main/install.sh | bash</code></div>
-
-    <h3>Upgrade</h3>
-    <div class="code-block"><code>bcli upgrade         # download and replace with latest
-bcli upgrade --check # check without installing</code></div>
-    <p>After upgrading, run <code>hash -r</code> or open a new terminal. Restart Claude Desktop if you use the MCP server.</p>
-
-    <h3>Download manually</h3>
-    <p>Grab the latest from <a href="https://github.com/mreider/better-bear-cli/releases/latest">GitHub Releases</a>. Universal binary (arm64 + x86_64), macOS 13+.</p>
-    <div class="code-block"><code>curl -L https://github.com/mreider/better-bear-cli/releases/latest/download/bcli-macos-universal.tar.gz -o bcli.tar.gz
-tar xzf bcli.tar.gz
-mv bcli ~/.local/bin/bcli
-rm bcli.tar.gz</code></div>
-
-    <h3>Build from source</h3>
-    <p>Requires Swift 5.9+.</p>
-    <div class="code-block"><code>git clone https://github.com/mreider/better-bear-cli.git
-cd better-bear-cli
-swift build -c release
-cp .build/release/bcli ~/.local/bin/bcli</code></div>
+  <section id="notes">
+    <h2>Notes &amp; Search</h2>
+    <div class="two-col">
+      <table>
+        <tr><td>bcli ls</td><td>List notes</td></tr>
+        <tr><td>bcli ls --tag work --json</td><td>Filter by tag, JSON</td></tr>
+        <tr><td>bcli ls --untagged</td><td>Notes with no tags</td></tr>
+        <tr><td>bcli ls --archived</td><td>Archived notes</td></tr>
+        <tr><td>bcli ls --trashed</td><td>Trashed notes</td></tr>
+      </table>
+      <table>
+        <tr><td>bcli get &lt;id&gt;</td><td>View note</td></tr>
+        <tr><td>bcli get &lt;id&gt; --raw</td><td>Just markdown</td></tr>
+        <tr><td>bcli search "query"</td><td>Full-text search</td></tr>
+        <tr><td>bcli search "q" --since yesterday</td><td>Date filter</td></tr>
+        <tr><td>bcli search "q" --before 2026-06-01</td><td>Upper bound</td></tr>
+      </table>
+    </div>
+    <p style="margin-top:6px">Date filters: <code>today</code> <code>yesterday</code> <code>last-week</code> <code>last-month</code> <code>last-year</code> or <code>YYYY-MM-DD</code></p>
   </section>
 
   <hr>
 
-  <section>
-    <h2>Auth</h2>
-    <div class="code-block"><code>bcli auth</code></div>
-    <p>Opens your browser for Apple Sign-In via CloudKit JS. Token saved to <code>~/.config/bear-cli/auth.json</code>. You can also pass a token directly with <code>bcli auth --token '&lt;token&gt;'</code>.</p>
+  <section id="create">
+    <h2>Create &amp; Edit</h2>
+    <div class="two-col">
+      <table>
+        <tr><td>bcli create "Title" -b "Body"</td><td>Create a note</td></tr>
+        <tr><td>bcli create "T" -t "t1,t2"</td><td>With tags</td></tr>
+        <tr><td>bcli create "T" --stdin</td><td>From stdin</td></tr>
+        <tr><td>bcli create "T" --fm "k=v"</td><td>With front matter</td></tr>
+      </table>
+      <table>
+        <tr><td>bcli edit &lt;id&gt; --append "text"</td><td>Append to end</td></tr>
+        <tr><td>bcli edit --append "x" --after "H"</td><td>After heading</td></tr>
+        <tr><td>bcli edit --replace-section "H"</td><td>Replace section</td></tr>
+        <tr><td>bcli edit &lt;id&gt; --editor</td><td>Open in $EDITOR</td></tr>
+        <tr><td>bcli edit &lt;id&gt; --stdin</td><td>Replace from stdin</td></tr>
+      </table>
+    </div>
   </section>
 
   <hr>
 
-  <section>
-    <h2>Commands</h2>
-
-    <h3>Notes</h3>
+  <section id="attachments">
+    <h2>Attachments</h2>
+    <p>Uploads files to iCloud. Images (jpg, png, gif, webp, heic, svg) render inline. Other files embed.</p>
     <table>
-      <tr><td>bcli ls</td><td>List notes</td></tr>
-      <tr><td>bcli ls --all --tag work --json</td><td>Filter by tag, show all, JSON output</td></tr>
-      <tr><td>bcli ls --untagged</td><td>List notes with no tags</td></tr>
-      <tr><td>bcli ls --archived</td><td>List archived notes</td></tr>
-      <tr><td>bcli ls --trashed</td><td>List trashed notes</td></tr>
-      <tr><td>bcli get &lt;id&gt;</td><td>View note with metadata</td></tr>
-      <tr><td>bcli get &lt;id&gt; --raw</td><td>Just the markdown</td></tr>
-      <tr><td>bcli get &lt;id&gt; --json</td><td>JSON output (includes parsed front matter)</td></tr>
+      <tr><td>bcli attach &lt;id&gt; photo.jpg</td><td>Append image to note</td></tr>
+      <tr><td>bcli attach &lt;id&gt; img.png --after "Profile"</td><td>After a heading</td></tr>
+      <tr><td>bcli attach &lt;id&gt; img.png --before "Footer"</td><td>Before text</td></tr>
+      <tr><td>bcli attach &lt;id&gt; img.png --prepend</td><td>After title</td></tr>
+      <tr><td>bcli attach name.png --base64 &lt;data&gt;</td><td>From base64 (programmatic)</td></tr>
     </table>
+  </section>
 
-    <h3>Search</h3>
-    <table>
-      <tr><td>bcli search "query"</td><td>Full-text search (title, tags, body)</td></tr>
-      <tr><td>bcli search "q" --since yesterday</td><td>Modified after date</td></tr>
-      <tr><td>bcli search "q" --since last-week</td><td>Relative: today, yesterday, last-week, last-month, last-year</td></tr>
-      <tr><td>bcli search "q" --since 2026-01-01</td><td>Absolute: YYYY-MM-DD</td></tr>
-      <tr><td>bcli search "q" --before 2026-06-01</td><td>Modified before date</td></tr>
-      <tr><td>bcli search "q" --no-sync</td><td>Search without syncing first</td></tr>
-    </table>
+  <hr>
 
-    <h3>Create</h3>
-    <table>
-      <tr><td>bcli create "Title" -b "Body"</td><td>Create a note</td></tr>
-      <tr><td>bcli create "Title" -t "t1,t2"</td><td>Create with tags</td></tr>
-      <tr><td>bcli create "Title" --stdin</td><td>Pipe content from stdin</td></tr>
-      <tr><td>bcli create "Title" --fm "status=draft" "project=alpha"</td><td>Create with YAML front matter</td></tr>
-    </table>
-
-    <h3>Edit</h3>
-    <table>
-      <tr><td>bcli edit &lt;id&gt; --append "text"</td><td>Append to end of note</td></tr>
-      <tr><td>bcli edit &lt;id&gt; --append "text" --after "Heading"</td><td>Insert after a heading or text</td></tr>
-      <tr><td>bcli edit &lt;id&gt; --replace-section "Heading" --section-content "new"</td><td>Replace content under a heading</td></tr>
-      <tr><td>bcli edit &lt;id&gt; --editor</td><td>Open in $EDITOR</td></tr>
-      <tr><td>bcli edit &lt;id&gt; --stdin</td><td>Replace entire content from stdin</td></tr>
-      <tr><td>bcli edit &lt;id&gt; --set-fm "status=done" "reviewed=true"</td><td>Set front matter fields</td></tr>
-      <tr><td>bcli edit &lt;id&gt; --remove-fm "draft"</td><td>Remove front matter fields</td></tr>
-    </table>
-
-    <h3>Attachments</h3>
-    <table>
-      <tr><td>bcli attach &lt;id&gt; photo.jpg</td><td>Upload image to iCloud, embed in note</td></tr>
-      <tr><td>bcli attach &lt;id&gt; doc.pdf</td><td>Attach any file type</td></tr>
-      <tr><td>bcli attach &lt;id&gt; img.png --prepend</td><td>Insert after the title</td></tr>
-      <tr><td>bcli attach &lt;id&gt; img.png --after "Profile"</td><td>Insert after a heading or text</td></tr>
-      <tr><td>bcli attach &lt;id&gt; img.png --before "Footer"</td><td>Insert before a heading or text</td></tr>
-      <tr><td>bcli attach &lt;id&gt; img.png --at-line 5</td><td>Insert after line 5</td></tr>
-      <tr><td>bcli attach name.png --base64 &lt;data&gt;</td><td>Attach from base64 data (for programmatic use)</td></tr>
-    </table>
-
-    <h3>Tags</h3>
+  <section id="tags">
+    <h2>Tags</h2>
     <table>
       <tr><td>bcli tags</td><td>Tag tree with counts</td></tr>
-      <tr><td>bcli tag add &lt;id&gt; "work"</td><td>Add tag to a note</td></tr>
-      <tr><td>bcli tag remove &lt;id&gt; "work"</td><td>Remove tag from a note</td></tr>
-      <tr><td>bcli tag rename "old" "new"</td><td>Rename tag across all notes</td></tr>
-      <tr><td>bcli tag delete "tag"</td><td>Remove tag from all notes</td></tr>
+      <tr><td>bcli tag add &lt;id&gt; "work"</td><td>Add tag to note</td></tr>
+      <tr><td>bcli tag remove &lt;id&gt; "work"</td><td>Remove tag from note</td></tr>
+      <tr><td>bcli tag rename "old" "new"</td><td>Rename across all notes</td></tr>
+      <tr><td>bcli tag delete "tag"</td><td>Remove from all notes</td></tr>
     </table>
+  </section>
 
-    <h3>Archive &amp; Trash</h3>
-    <table>
-      <tr><td>bcli archive &lt;id&gt;</td><td>Archive a note</td></tr>
-      <tr><td>bcli archive &lt;id&gt; --undo</td><td>Unarchive</td></tr>
-      <tr><td>bcli trash &lt;id&gt;</td><td>Move to trash</td></tr>
-    </table>
+  <hr>
 
-    <h3>TODOs</h3>
-    <table>
-      <tr><td>bcli todo</td><td>List notes with incomplete TODOs</td></tr>
-      <tr><td>bcli todo --limit 10</td><td>Limit results</td></tr>
-      <tr><td>bcli todo &lt;id&gt;</td><td>View TODOs in a note (interactive toggle)</td></tr>
-      <tr><td>bcli todo &lt;id&gt; --toggle 3</td><td>Toggle item 3 without prompting</td></tr>
-      <tr><td>bcli todo --json</td><td>JSON output</td></tr>
-      <tr><td>bcli todo --no-sync</td><td>Skip auto-sync</td></tr>
-    </table>
+  <section id="organize">
+    <h2>Archive, Trash &amp; TODOs</h2>
+    <div class="two-col">
+      <table>
+        <tr><td>bcli archive &lt;id&gt;</td><td>Archive</td></tr>
+        <tr><td>bcli archive &lt;id&gt; --undo</td><td>Unarchive</td></tr>
+        <tr><td>bcli trash &lt;id&gt;</td><td>Trash</td></tr>
+      </table>
+      <table>
+        <tr><td>bcli todo</td><td>Notes with open TODOs</td></tr>
+        <tr><td>bcli todo &lt;id&gt;</td><td>View/toggle interactively</td></tr>
+        <tr><td>bcli todo &lt;id&gt; --toggle 3</td><td>Toggle item 3</td></tr>
+      </table>
+    </div>
+  </section>
 
-    <h3>Export</h3>
-    <table>
-      <tr><td>bcli export ./dir</td><td>Export all notes as markdown</td></tr>
-      <tr><td>bcli export ./dir --frontmatter</td><td>Include YAML metadata (merges with existing front matter)</td></tr>
-      <tr><td>bcli export ./dir --tag work</td><td>Export only matching tag</td></tr>
-    </table>
+  <hr>
 
-    <h3>Sync &amp; Config</h3>
+  <section id="frontmatter">
+    <h2>YAML Front Matter</h2>
+    <p>Bear collapses <code>---</code> blocks. Use for status, projects, dates, or any metadata.</p>
+    <div class="two-col">
+      <table>
+        <tr><td>bcli create "T" --fm "status=draft"</td><td>Create with front matter</td></tr>
+        <tr><td>bcli get &lt;id&gt; --json</td><td>Includes parsed frontmatter</td></tr>
+      </table>
+      <table>
+        <tr><td>bcli edit --set-fm "status=done"</td><td>Set field</td></tr>
+        <tr><td>bcli edit --remove-fm "draft"</td><td>Remove field</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <hr>
+
+  <section id="tools">
+    <h2>Library Tools</h2>
     <table>
-      <tr><td>bcli sync</td><td>Sync notes to local cache</td></tr>
-      <tr><td>bcli sync --full</td><td>Force full re-sync</td></tr>
+      <tr><td>bcli stats</td><td>Notes, words, tags, dates, top tags</td></tr>
+      <tr><td>bcli duplicates</td><td>Find notes with duplicate titles</td></tr>
       <tr><td>bcli health</td><td>Health report: duplicates, empties, orphans, conflicts</td></tr>
-      <tr><td>bcli health --json</td><td>JSON output for scripting/MCP</td></tr>
-      <tr><td>bcli upgrade</td><td>Self-update to latest release</td></tr>
-      <tr><td>bcli upgrade --check</td><td>Check for updates without installing</td></tr>
-      <tr><td>bcli mcp install</td><td>Install MCP server into Claude Desktop</td></tr>
-      <tr><td>bcli mcp uninstall</td><td>Remove MCP server from Claude Desktop</td></tr>
+      <tr><td>bcli sync</td><td>Sync to local cache</td></tr>
+      <tr><td>bcli sync --full</td><td>Force full re-sync</td></tr>
+      <tr><td>bcli export ./dir</td><td>Export as markdown</td></tr>
+      <tr><td>bcli export --frontmatter</td><td>With YAML metadata</td></tr>
+      <tr><td>bcli export --tag work</td><td>Filter by tag</td></tr>
+      <tr><td>bcli upgrade</td><td>Self-update</td></tr>
+      <tr><td>bcli mcp install</td><td>Install MCP for Claude Desktop</td></tr>
     </table>
   </section>
 
   <hr>
 
-  <section>
-    <h2>MCP Server (Claude Desktop)</h2>
-    <p>20 tools that let Claude read, search, create, edit, tag, and attach files to your Bear notes.</p>
-    <h3>Setup</h3>
-    <div class="code-block"><code>cd mcp-server && npm install && npm run build && cd ..
-bcli mcp install
-# Restart Claude Desktop</code></div>
-    <p>To remove: <code>bcli mcp uninstall</code></p>
-
-    <h3>Tools</h3>
-    <table>
-      <tr><td>bear_sync</td><td>Sync notes from iCloud</td></tr>
-      <tr><td>bear_list_notes</td><td>List notes with tag filter, include archived/trashed</td></tr>
-      <tr><td>bear_get_note</td><td>Full content by ID (includes parsed front matter)</td></tr>
-      <tr><td>bear_search</td><td>Full-text search with since/before date filters</td></tr>
-      <tr><td>bear_get_tags</td><td>Tag hierarchy with counts</td></tr>
-      <tr><td>bear_create_note</td><td>Create with tags and front matter</td></tr>
-      <tr><td>bear_edit_note</td><td>Append, replace, section edit, front matter set/remove</td></tr>
-      <tr><td>bear_attach_file</td><td>Upload image/file to iCloud with placement options</td></tr>
-      <tr><td>bear_archive_note</td><td>Archive or unarchive</td></tr>
-      <tr><td>bear_trash_note</td><td>Move to trash</td></tr>
-      <tr><td>bear_add_tag</td><td>Add tag to note</td></tr>
-      <tr><td>bear_remove_tag</td><td>Remove tag from note</td></tr>
-      <tr><td>bear_rename_tag</td><td>Rename across all notes</td></tr>
-      <tr><td>bear_delete_tag</td><td>Delete from all notes</td></tr>
-      <tr><td>bear_find_untagged</td><td>List untagged notes</td></tr>
-      <tr><td>bear_list_todos</td><td>Notes with incomplete TODOs</td></tr>
-      <tr><td>bear_get_todos</td><td>TODO items from a note</td></tr>
-      <tr><td>bear_toggle_todo</td><td>Toggle TODO completion</td></tr>
-      <tr><td>bear_health_check</td><td>Library health: duplicates, empties, orphans, conflicts</td></tr>
-    </table>
-    <p style="margin-top: 12px;">Locked/private notes show <code>locked: true</code> in results. Their body content may not be searchable.</p>
+  <section id="mcp">
+    <h2>MCP Server</h2>
+    <p>22 tools for <a href="https://claude.ai/download">Claude Desktop</a>. Install: <code>cd mcp-server && npm install && npm run build && cd .. && bcli mcp install</code></p>
+    <div class="two-col">
+      <table>
+        <tr><td>bear_sync</td><td>Sync from iCloud</td></tr>
+        <tr><td>bear_list_notes</td><td>List with filters</td></tr>
+        <tr><td>bear_get_note</td><td>Full content + front matter</td></tr>
+        <tr><td>bear_search</td><td>Search with date filters</td></tr>
+        <tr><td>bear_get_tags</td><td>Tag hierarchy</td></tr>
+        <tr><td>bear_create_note</td><td>Create with tags + front matter</td></tr>
+        <tr><td>bear_edit_note</td><td>Append, replace, sections, FM</td></tr>
+        <tr><td>bear_attach_file</td><td>Upload to iCloud</td></tr>
+        <tr><td>bear_archive_note</td><td>Archive/unarchive</td></tr>
+        <tr><td>bear_trash_note</td><td>Trash</td></tr>
+        <tr><td>bear_add_tag</td><td>Add tag</td></tr>
+      </table>
+      <table>
+        <tr><td>bear_remove_tag</td><td>Remove tag</td></tr>
+        <tr><td>bear_rename_tag</td><td>Rename across notes</td></tr>
+        <tr><td>bear_delete_tag</td><td>Delete from all notes</td></tr>
+        <tr><td>bear_find_untagged</td><td>Untagged notes</td></tr>
+        <tr><td>bear_list_todos</td><td>Notes with TODOs</td></tr>
+        <tr><td>bear_get_todos</td><td>TODO items</td></tr>
+        <tr><td>bear_toggle_todo</td><td>Toggle completion</td></tr>
+        <tr><td>bear_note_stats</td><td>Library statistics</td></tr>
+        <tr><td>bear_find_duplicates</td><td>Duplicate titles</td></tr>
+        <tr><td>bear_health_check</td><td>Health report</td></tr>
+      </table>
+    </div>
   </section>
 
   <hr>
 
-  <section>
-    <h2>Example Scripts</h2>
-    <p>Ready-to-use shell scripts in the <a href="https://github.com/mreider/better-bear-cli/tree/main/scripts">scripts/</a> directory:</p>
-    <table>
-      <tr><td>daily-note.sh</td><td>Create a daily note from template (skips if exists)</td></tr>
-      <tr><td>meeting-note.sh</td><td>Meeting note with attendees and action items</td></tr>
-      <tr><td>backup.sh</td><td>Export all notes + git commit (cron-friendly)</td></tr>
-      <tr><td>cleanup-empty.sh</td><td>Find and trash empty/untitled notes</td></tr>
-      <tr><td>find-duplicates.sh</td><td>Find notes with duplicate titles</td></tr>
-      <tr><td>bulk-tag.sh</td><td>Add a tag to all notes matching a search</td></tr>
-      <tr><td>stale-notes.sh</td><td>Find notes not modified in N days</td></tr>
-      <tr><td>weekly-review.sh</td><td>Summary of notes modified this week</td></tr>
-      <tr><td>import-markdown.sh</td><td>Import a folder of .md files as notes</td></tr>
-      <tr><td>note-stats.sh</td><td>Library stats: counts, tags, dates, TODOs</td></tr>
-      <tr><td>health-check.sh</td><td>Health report with actionable warnings</td></tr>
-    </table>
+  <section id="scripts">
+    <h2>Scripts</h2>
+    <p>Ready-to-use shell scripts in <a href="https://github.com/mreider/better-bear-cli/tree/main/scripts">scripts/</a>:</p>
+    <div class="two-col">
+      <table>
+        <tr><td>daily-note.sh</td><td>Daily note from template</td></tr>
+        <tr><td>meeting-note.sh</td><td>Meeting with attendees</td></tr>
+        <tr><td>backup.sh</td><td>Export + git commit</td></tr>
+        <tr><td>cleanup-empty.sh</td><td>Find/trash empty notes</td></tr>
+        <tr><td>find-duplicates.sh</td><td>Duplicate titles</td></tr>
+      </table>
+      <table>
+        <tr><td>bulk-tag.sh</td><td>Tag notes by search</td></tr>
+        <tr><td>stale-notes.sh</td><td>Notes not modified in N days</td></tr>
+        <tr><td>weekly-review.sh</td><td>This week's activity</td></tr>
+        <tr><td>import-markdown.sh</td><td>Import .md files</td></tr>
+        <tr><td>note-stats.sh</td><td>Library stats</td></tr>
+      </table>
+    </div>
   </section>
 
   <hr>
 
-  <section>
-    <h2>How it works</h2>
-    <p>This CLI uses the same CloudKit REST API that <a href="https://web.bear.app">Bear Web</a> uses. Notes live in your iCloud private database under <code>iCloud.net.shinyfrog.bear</code>. Authentication uses the iCloud web auth token flow. The CLI does not touch Bear's local SQLite database — it's safe to use with Bear open on any device.</p>
+  <section id="how">
+    <h2>How It Works</h2>
+    <p>Same CloudKit REST API as <a href="https://web.bear.app">Bear Web</a>. Notes live in your iCloud private database. Does not touch Bear's local SQLite — safe to use with Bear open on any device.</p>
   </section>
 
-  <div class="coffee">
-    <a href="https://buymeacoffee.com/mreider"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="48"></a>
+  <div id="support" class="coffee">
+    <a href="https://buymeacoffee.com/mreider"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="44"></a>
   </div>
 
   <footer>
