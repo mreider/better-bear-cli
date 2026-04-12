@@ -445,54 +445,53 @@ cp .build/release/bcli ~/.local/bin/bcli</code></div>
   <section id="use-cases">
     <h2>Use Cases</h2>
 
-    <h3>Give Claude your project context</h3>
-    <p>Tag architecture docs, design decisions, and tickets with <code>#context</code>. When you ask Claude about your project, it reads the index, pulls the relevant notes, and answers grounded in your actual docs &mdash; not hallucinations.</p>
-    <div class="code-block"><code><strong>You:</strong>   "Why did we choose PostgreSQL over DynamoDB?"
-<strong>Claude:</strong> [fetches architecture-decisions.md]
-        According to your architecture decision record from January:
-        you chose PostgreSQL for strong consistency on billing data
-        and to avoid vendor lock-in on the data layer.</code></div>
-
-    <h3>Daily standup prep</h3>
-    <p>Claude searches your notes for what changed this week, surfaces open TODOs, and drafts a standup update.</p>
-    <div class="code-block"><code><strong>You:</strong>   "What did I work on this week? Check my context and my recent notes."
-<strong>Claude:</strong> [bear_context_search + bear_search --since last-week]
-        This week you updated the auth migration plan, closed JIRA-1289,
-        and have 3 open TODOs in your sprint planning note.</code></div>
+    <h3>Study with your notes</h3>
+    <p>Tag lecture notes and readings with <code>#context/bio101</code>. Claude becomes a study partner that knows your actual course material.</p>
+    <div class="code-block"><code><strong>You:</strong>   "Quiz me on the immune system based on my notes"
+<strong>Claude:</strong> [fetches lecture-12-immunity.md + reading-innate-vs-adaptive.md]
+        Here are 5 questions based on your lecture notes and the assigned
+        reading. Let's start: What are the two main branches of the
+        adaptive immune system, and how do they differ?</code></div>
 
     <h3>Research and writing</h3>
-    <p>Keep reference material in Bear, tag it <code>#context/research</code>. Ask Claude to synthesize, compare, or draft from your sources.</p>
-    <div class="code-block"><code><strong>You:</strong>   "Compare the three vendor proposals in my context"
-<strong>Claude:</strong> [fetches vendor-a.md, vendor-b.md, vendor-c.md]
-        Here's a comparison table across pricing, SLA, and integration
-        complexity based on the three proposals in your library...</code></div>
+    <p>Collect sources in Bear, tag them <code>#context/research</code>. Ask Claude to compare, synthesize, or help you draft &mdash; grounded in your actual sources, not hallucinations.</p>
+    <div class="code-block"><code><strong>You:</strong>   "Compare the three articles on urban heat islands in my context"
+<strong>Claude:</strong> [fetches zhang-2024.md, patel-2025.md, nakamura-2023.md]
+        All three agree that green infrastructure reduces surface temps
+        by 2-4&deg;C. Zhang and Patel diverge on whether cool roofs are
+        cost-effective at scale. Here's a comparison table...</code></div>
 
-    <h3>Incident response</h3>
-    <p>During an outage, drop the Slack thread and Grafana findings into <code>inbox/</code>. Claude triages them, and you build a post-mortem note in Bear with full context.</p>
-    <div class="code-block"><code><strong>You:</strong>   "Create a post-mortem note from today's outage context"
-<strong>Claude:</strong> [reads incident notes from context library]
-        Created "2026-04-12 Outage Post-Mortem" with timeline, root cause
-        (connection pool exhaustion), and 3 action items. Tagged #context/incidents.</code></div>
+    <h3>Meeting and project notes</h3>
+    <p>Tag meeting notes, project plans, and decisions with <code>#context</code>. Ask Claude what happened, what's pending, and what to do next.</p>
+    <div class="code-block"><code><strong>You:</strong>   "What did we decide about the budget in last week's meeting?"
+<strong>Claude:</strong> [fetches meeting-apr-7.md]
+        In Monday's meeting you agreed to cap the marketing spend at $5k
+        for Q2 and revisit after the May metrics review. Sarah owns the
+        vendor shortlist &mdash; that's still marked as a TODO.</code></div>
 
-    <h3>CLI power user workflows</h3>
-    <p>Everything Claude does via MCP, you can do from the terminal. Chain commands for automation.</p>
-    <div class="code-block"><code># Morning routine: sync, check health, see what's stale
+    <h3>Weekly review</h3>
+    <p>Claude checks what you worked on, surfaces open TODOs, and helps you plan the week ahead.</p>
+    <div class="code-block"><code><strong>You:</strong>   "What did I work on this week?"
+<strong>Claude:</strong> [searches context + recent notes]
+        This week you finished the grant proposal draft, added 3 new
+        sources to your literature review, and have 4 open TODOs across
+        your project notes. Want me to prioritize them?</code></div>
+
+    <h3>Shared knowledge base</h3>
+    <p>A team, study group, or family all tag shared notes with <code>#context</code> in Bear. Everyone syncs the same library. Claude gives consistent answers because everyone's working from the same material.</p>
+
+    <h3>Terminal power users</h3>
+    <p>Everything Claude does via MCP also works from the command line.</p>
+    <div class="code-block"><code># Sync and check health
 bcli context sync && bcli context status
 
-# Find notes about payments, tag them for context
-bcli search "payment" --json | jq -r '.[].id' | while read id; do
-  bcli context add "$id" --subtag payments
+# Tag all notes about a topic
+bcli search "machine learning" --json | jq -r '.[].id' | while read id; do
+  bcli context add "$id" --subtag ml
 done
 
-# Export context library for offline use
-bcli context fetch bear/arch-overview.md > /tmp/arch.md
-
-# Weekly cleanup: find notes with no tags, check for duplicates
-bcli ls --untagged --json | jq '.[].title'
-bcli duplicates</code></div>
-
-    <h3>Team knowledge base</h3>
-    <p>Everyone tags shared docs with <code>#context</code> in Bear. Each team member syncs the same library. Claude answers questions consistently because everyone's working from the same source material.</p>
+# Quick lookup
+bcli context search "deadlines" --json</code></div>
   </section>
 
   <hr>
