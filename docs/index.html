@@ -205,6 +205,10 @@ bcli mcp uninstall   # remove from Claude Desktop and Claude Code
 bcli mcp reinstall   # clean uninstall + install</code></div>
     <p>Use <code>--desktop-only</code> or <code>--code-only</code> with install/uninstall to target one client.</p>
 
+    <div class="callout">
+      <strong>Uninstall:</strong> Always use <code>bcli mcp uninstall</code> to remove the MCP server. The uninstall button in Claude Desktop's UI does not work for config-file MCP servers and will show an error.
+    </div>
+
     <p>Requires <a href="https://nodejs.org">Node.js 18+</a> and the <code>bcli</code> binary (see <a href="#cli-install">CLI Install</a>).</p>
   </section>
 

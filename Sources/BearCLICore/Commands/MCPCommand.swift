@@ -172,6 +172,7 @@ private func installDesktop() throws -> Bool {
     config["mcpServers"] = servers
     try writeClaudeConfig(config, to: configURL)
     print("Claude Desktop: installed — restart Claude Desktop to activate")
+    print("  To uninstall, use: bcli mcp uninstall (not the Claude Desktop UI)")
     return true
 }
 
