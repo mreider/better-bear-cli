@@ -1,0 +1,5 @@
+src/
+tsconfig.json
+test-integration.sh
+mcp-example.png
+.gitignore

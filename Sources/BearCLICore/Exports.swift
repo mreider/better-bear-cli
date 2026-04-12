@@ -27,6 +27,7 @@ public struct BearCLI: ParsableCommand {
             MCPCommand.self,
             UpgradeCommand.self,
             ConfigCommand.self,
+            ContextCommand.self,
         ]
     )
 

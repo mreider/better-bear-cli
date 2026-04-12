@@ -1,2 +1,5 @@
 node_modules/
 dist/
+.mcpregistry_*
+.smithery/
+*.mcpb

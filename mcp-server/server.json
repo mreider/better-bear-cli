@@ -1,0 +1,20 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.mreider/better-bear",
+  "description": "MCP server for Bear notes — read, search, create, edit, tag, and manage notes via CloudKit",
+  "repository": {
+    "url": "https://github.com/mreider/better-bear-cli",
+    "source": "github"
+  },
+  "version": "0.4.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "better-bear",
+      "version": "0.4.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

@@ -1,19 +1,51 @@
-# better-bear
+# better bear
 
 [![Build](https://github.com/mreider/better-bear-cli/actions/workflows/build-on-merge.yml/badge.svg)](https://github.com/mreider/better-bear-cli/actions/workflows/build-on-merge.yml)
 [![Release](https://img.shields.io/github/v/release/mreider/better-bear-cli)](https://github.com/mreider/better-bear-cli/releases/latest)
+[![npm](https://img.shields.io/npm/v/better-bear)](https://www.npmjs.com/package/better-bear)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/mreider/better-bear-cli/blob/main/LICENSE)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-orange?logo=buy-me-a-coffee&logoColor=white)](https://buymeacoffee.com/mreider)
 
-A CLI and MCP server for [Bear](https://bear.app) notes via CloudKit. No SQLite hacking, no x-callback-url.
+MCP server and CLI for [Bear](https://bear.app) notes via CloudKit. Includes a **context library** — a curated, synced folder of notes optimized for LLM consumption, inspired by [Karpathy's LLM Knowledge Base](https://x.com/karpathy/status/1909382922276999612) pattern.
 
-**Docs, install instructions, and full command reference: [better-bear.com](https://better-bear.com)**
+**Full docs: [better-bear.com](https://better-bear.com)**
 
-## Quick install
+## Use with Claude Desktop
+
+Add to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "better-bear": {
+      "command": "npx",
+      "args": ["-y", "better-bear"]
+    }
+  }
+}
+```
+
+Or download the [.mcpb bundle](https://github.com/mreider/better-bear-cli/releases/latest) and double-click to install.
+
+## Use with Claude Code
+
+```
+claude mcp add better-bear -- npx -y better-bear
+```
+
+## Prerequisites
+
+The MCP server needs the `bcli` binary:
 
 ```
 curl -sL https://raw.githubusercontent.com/mreider/better-bear-cli/main/install.sh | bash
 bcli auth
+```
+
+The installer will offer to set up the MCP server too. Or install everything at once:
+
+```
+curl -sL https://raw.githubusercontent.com/mreider/better-bear-cli/main/install.sh | bash -s -- --mcp
 ```
 
 ## Upgrade
@@ -21,6 +53,42 @@ bcli auth
 ```
 bcli upgrade
 ```
+
+## CLI
+
+All commands also work standalone from the terminal:
+
+```
+bcli ls                          # list notes
+bcli search "query"              # full-text search
+bcli create "Title" -b "Body"    # create a note
+bcli edit <id> --append "text"   # append to a note
+bcli tags                        # list all tags
+bcli attach <id> photo.jpg       # attach a file
+bcli stats                       # library statistics
+bcli health                      # health check
+```
+
+See [better-bear.com](https://better-bear.com) for the full command reference.
+
+## Context Library
+
+Turn a subset of your Bear notes into a synced, curated context folder that Claude can navigate using index-first retrieval. Tag notes with `#context` in Bear, sync, and Claude reads a compact index to find relevant files — loading only what it needs, not everything.
+
+```
+bcli context init                          # one-time setup
+bcli context sync                          # pull qualifying notes
+bcli context add <id> --subtag architecture # tag a note for inclusion
+bcli context status                        # health check
+```
+
+Or tell Claude: *"Set up a context library"* — and it handles everything via MCP tools.
+
+The architecture follows Karpathy's three-folder pattern: `bear/` (synced from CloudKit), `external/` (Jira, Confluence, Slack exports), and `inbox/` (drop zone for triage). An `index.md` manifest maps everything. See [better-bear.com](https://better-bear.com#context-library) for full documentation.
+
+## MCP Tools
+
+29 tools covering notes, tags, TODOs, attachments, search, front matter, stats, health checks, and the context library. See the [MCP server README](mcp-server/README.md) for the full list.
 
 ## Contributors
 

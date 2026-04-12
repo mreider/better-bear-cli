@@ -1,15 +1,48 @@
 {
-  "name": "better-bear-mcp",
-  "version": "0.1.0",
-  "description": "MCP server for Bear notes via better-bear-cli",
+  "name": "better-bear",
+  "version": "0.4.0",
+  "description": "MCP server for Bear notes — read, search, create, edit, tag, and manage notes via CloudKit",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
+    "better-bear": "dist/index.js",
     "better-bear-mcp": "dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "bear",
+    "notes",
+    "cloudkit",
+    "claude",
+    "macos",
+    "model-context-protocol",
+    "ai",
+    "bear-notes"
+  ],
+  "author": {
+    "name": "Matt Reider",
+    "email": "mreider@gmail.com"
+  },
+  "mcpName": "io.github.mreider/better-bear",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mreider/better-bear-cli.git",
+    "directory": "mcp-server"
+  },
+  "homepage": "https://better-bear.com",
+  "bugs": {
+    "url": "https://github.com/mreider/better-bear-cli/issues"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1"

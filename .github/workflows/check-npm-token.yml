@@ -1,0 +1,59 @@
+name: Check npm token
+
+on:
+  schedule:
+    # Every Monday at 9am UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify npm token works
+        id: check
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer $NPM_TOKEN" \
+            https://registry.npmjs.org/-/whoami)
+          if [ "$STATUS" != "200" ]; then
+            echo "failed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "failed=false" >> "$GITHUB_OUTPUT"
+            WHOAMI=$(curl -s -H "Authorization: Bearer $NPM_TOKEN" https://registry.npmjs.org/-/whoami | jq -r .username)
+            echo "Authenticated as: $WHOAMI"
+          fi
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create issue if token expired
+        if: steps.check.outputs.failed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'npm-token',
+            });
+            if (existing.data.length > 0) return;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'npm token expired — releases will skip npm publish',
+              labels: ['npm-token'],
+              body: [
+                'The `NPM_TOKEN` secret is expired or invalid. New releases will still build the CLI and .mcpb, but **npm publish will be skipped**.',
+                '',
+                '## How to fix',
+                '',
+                '1. Go to https://www.npmjs.com/settings/mreider/tokens',
+                '2. Create a new **Automation** token',
+                '3. Update the repo secret:',
+                '   ```',
+                '   echo "npm_YOUR_NEW_TOKEN" | gh secret set NPM_TOKEN -R mreider/better-bear-cli',
+                '   ```',
+                '4. Close this issue',
+              ].join('\n'),
+            });

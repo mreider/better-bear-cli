@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>better bear</title>
-  <meta name="description" content="A CLI and MCP server for Bear notes. Talk to your notes from the terminal or let AI assistants read, search, create, and edit them.">
+  <meta name="description" content="MCP server and CLI for Bear notes. Let Claude read, search, create, and edit your notes — or use them from the terminal.">
   <link rel="icon" href="better-bear.png" type="image/png">
   <style>
     :root {
@@ -60,6 +60,11 @@
     td:first-child { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 12px; color: var(--text); }
     td:last-child { color: var(--text-muted); }
 
+    .callout { background: rgba(221,76,79,0.06); border-left: 3px solid var(--accent); border-radius: 0 var(--radius) var(--radius) 0; padding: 16px 20px; margin: 16px 0; font-size: 14px; color: var(--text-muted); line-height: 1.7; }
+    .callout strong { color: var(--text); }
+    .callout a { color: var(--accent); }
+    .context-diagram { background: var(--bg-code); border-radius: 10px; padding: 16px 20px; margin: 12px 0; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 12px; color: #e2e8f0; line-height: 1.6; white-space: pre; overflow-x: auto; }
+
     .coffee { text-align: center; padding: 24px 0; }
     .coffee a { display: inline-block; transition: opacity 0.2s; }
     .coffee a:hover { opacity: 0.8; }
@@ -83,20 +88,28 @@
   <div class="hero">
     <img src="better-bear.png" alt="better bear">
     <h1>better bear</h1>
-    <p>A CLI and MCP server for <a href="https://bear.app">Bear</a> notes via CloudKit. Use it from the terminal or let Claude read, search, and edit your notes.</p>
+    <p>Let Claude read, search, create, and edit your <a href="https://bear.app">Bear</a> notes. Also works as a standalone CLI. Powered by CloudKit.</p>
     <div class="hero-actions">
-      <a href="https://github.com/mreider/better-bear-cli/releases/latest" class="btn btn-primary">Download</a>
+      <a href="#claude-desktop" class="btn btn-primary">Set Up with Claude</a>
+      <a href="#cli-install" class="btn btn-secondary">CLI Only</a>
       <a href="https://github.com/mreider/better-bear-cli" class="btn btn-secondary">GitHub</a>
     </div>
   </div>
 
-  <div class="code-block">
-    <button class="copy-btn" onclick="navigator.clipboard.writeText('curl -sL https://raw.githubusercontent.com/mreider/better-bear-cli/main/install.sh | bash');this.textContent='Copied!'">Copy</button>
-    <code>curl -sL https://raw.githubusercontent.com/mreider/better-bear-cli/main/install.sh | bash</code>
+  <div class="features">
+    <div class="feature"><h3>Context Library</h3><p>Curated, synced context for LLMs. Index-first retrieval.</p></div>
+    <div class="feature"><h3>MCP Server</h3><p>29 tools for Claude Desktop and Claude Code.</p></div>
+    <div class="feature"><h3>CLI</h3><p>Create, search, edit, tag, and attach files from the terminal.</p></div>
+    <div class="feature"><h3>CloudKit</h3><p>Same API as Bear Web. Syncs to all devices.</p></div>
   </div>
 
   <nav class="toc">
-    <a href="#install">Install &amp; Upgrade</a>
+    <a href="#context-library">Context Library</a>
+    <a href="#claude-desktop">Claude Desktop</a>
+    <a href="#claude-code">Claude Code</a>
+    <a href="#mcpb">One-Click Install</a>
+    <a href="#mcp-tools">MCP Tools</a>
+    <a href="#cli-install">CLI Install</a>
     <a href="#notes">Notes &amp; Search</a>
     <a href="#create">Create &amp; Edit</a>
     <a href="#attachments">Attachments</a>
@@ -104,26 +117,149 @@
     <a href="#organize">Archive, Trash &amp; TODOs</a>
     <a href="#frontmatter">Front Matter</a>
     <a href="#tools">Library Tools</a>
-    <a href="#mcp">MCP Server</a>
     <a href="#scripts">Scripts</a>
+    <a href="#use-cases">Use Cases</a>
     <a href="#how">How It Works</a>
     <a href="#support">Support</a>
   </nav>
 
-  <div class="features">
-    <div class="feature"><h3>CLI</h3><p>Create, search, edit, tag, and attach files from the terminal.</p></div>
-    <div class="feature"><h3>MCP Server</h3><p>22 tools for Claude Desktop to manage your notes.</p></div>
-    <div class="feature"><h3>CloudKit</h3><p>Same API as Bear Web. Syncs to all devices.</p></div>
-    <div class="feature"><h3>Open Source</h3><p>MIT licensed. Universal macOS binary.</p></div>
-  </div>
+  <hr>
+
+  <section id="context-library">
+    <h2>Context Library</h2>
+
+    <div class="callout">
+      <strong>Background:</strong> Andrej Karpathy's <a href="https://x.com/karpathy/status/1909382922276999612" target="_blank">LLM Knowledge Base</a> pattern (April 2026) showed that the best way to give an LLM project knowledge isn't RAG or vector databases &mdash; it's a curated folder of markdown files with an index the model reads first. The LLM acts as a "research librarian," reading the index to find what's relevant, then loading only those files. Better Bear implements this pattern directly on top of your Bear notes.
+    </div>
+
+    <p>A context library is a synced, curated folder of Bear notes (plus external files) that Claude can navigate and query. Tag notes with <code>#context</code> in Bear, sync, and Claude uses index-first retrieval to find answers without loading everything.</p>
+
+    <div class="context-diagram">~/.bear-context/
+├── index.md              &larr; Claude reads this first
+├── bear/                 &larr; synced from Bear (source of truth)
+│   ├── arch-overview.md
+│   └── jira-proj-1234.md
+├── external/             &larr; Jira exports, Confluence, Slack, etc.
+│   └── confluence-auth.md
+└── inbox/                &larr; drop zone for untriaged files</div>
+
+    <h3>How it works</h3>
+    <p>Tag any Bear note with <code>#context</code> (or <code>#context/architecture</code>, <code>#context/jira</code>, etc.) and it enters the library on next sync. Remove the tag and it's cleaned up. Bear is always the source of truth for <code>bear/</code> files &mdash; local edits are overwritten on sync.</p>
+    <p>External files from other systems (Jira, Confluence, Slack) live in <code>external/</code> and are never overwritten by sync. Drop new files into <code>inbox/</code> for Claude to triage.</p>
+
+    <h3>Setup</h3>
+    <p>Tell Claude: <em>"Set up a context library"</em> &mdash; or from the terminal:</p>
+    <div class="code-block"><code>bcli context init
+bcli context sync</code></div>
+
+    <h3>Example: project knowledge base</h3>
+    <p>You're leading a project. Architecture docs, Jira tickets, and meeting notes live in Bear. Tag them <code>#context/architecture</code>, <code>#context/jira</code>, <code>#context/meetings</code>.</p>
+    <div class="code-block"><code><strong>You:</strong>   "Sync my context and tell me what's there"
+<strong>Claude:</strong> Synced 14 notes (~52,000 tokens). 2 updated, 1 new.
+        Your library has 10 architecture docs, 3 Jira tickets, 1 meeting note.
+
+<strong>You:</strong>   "What are the open risks in the auth service migration?"
+<strong>Claude:</strong> [reads index → fetches arch-overview.md + jira-1234.md + jira-1289.md]
+        Based on your notes, two risks: the session token storage doesn't meet
+        the new compliance requirements (JIRA-1234), and the legacy payment
+        processor cutover has no rollback plan (JIRA-1289).</code></div>
+
+    <h3>Example: onboarding a new teammate</h3>
+    <div class="code-block"><code><strong>You:</strong>   "Add my onboarding runbook to context"
+<strong>Claude:</strong> Tagged "Dev Onboarding Runbook" with #context. Synced.
+
+<strong>New hire (in their own Claude Desktop):</strong>
+        "How do I set up the dev environment?"
+<strong>Claude:</strong> [fetches onboarding-runbook.md]
+        Here's the setup process from the team runbook: ...</code></div>
+
+    <h3>Example: CLI automation</h3>
+    <div class="code-block"><code># Nightly cron: sync context, check health, flag issues
+bcli context sync --json | jq '.added, .removed'
+bcli context status --json | jq '.warnings[]'
+
+# Pipe context into another tool
+bcli context fetch bear/arch-overview.md | pbcopy</code></div>
+
+    <h3>CLI commands</h3>
+    <table>
+      <tr><td>bcli context init</td><td>One-time setup</td></tr>
+      <tr><td>bcli context sync</td><td>Pull qualifying notes, reconcile, regenerate index</td></tr>
+      <tr><td>bcli context sync --force</td><td>Full re-sync</td></tr>
+      <tr><td>bcli context index</td><td>Show the index (table of contents)</td></tr>
+      <tr><td>bcli context fetch &lt;path&gt;</td><td>Load a specific file</td></tr>
+      <tr><td>bcli context search "query"</td><td>Full-text search across all files</td></tr>
+      <tr><td>bcli context add &lt;id&gt;</td><td>Tag a note with #context, sync</td></tr>
+      <tr><td>bcli context add &lt;id&gt; --subtag jira</td><td>Tag as #context/jira</td></tr>
+      <tr><td>bcli context remove &lt;id&gt;</td><td>Untag and remove from library</td></tr>
+      <tr><td>bcli context status</td><td>Health check: counts, tokens, staleness, warnings</td></tr>
+    </table>
+
+    <h3>MCP tools</h3>
+    <table>
+      <tr><td>bear_context_setup</td><td>Initialize the context library</td></tr>
+      <tr><td>bear_context_sync</td><td>Sync Bear notes to the library</td></tr>
+      <tr><td>bear_context_index</td><td>Get the index + freshness metadata</td></tr>
+      <tr><td>bear_context_fetch</td><td>Load specific files by path</td></tr>
+      <tr><td>bear_context_search</td><td>Full-text search across all files</td></tr>
+      <tr><td>bear_context_add</td><td>Tag a note for inclusion</td></tr>
+      <tr><td>bear_context_remove</td><td>Untag and remove a note</td></tr>
+      <tr><td>bear_context_status</td><td>Health stats and warnings</td></tr>
+    </table>
+
+    <div class="callout">
+      <strong>Index-first retrieval:</strong> Claude reads <code>index.md</code> first (a compact table of contents with file paths, titles, and token estimates), identifies which files are relevant to your question, then fetches only those. This follows the same pattern as Karpathy's <code>index.md</code> manifest and <a href="https://llmstxt.org" target="_blank">llms.txt</a>: give the model a map, not a dump.
+    </div>
+  </section>
 
   <hr>
 
-  <section id="install">
-    <h2>Install &amp; Upgrade</h2>
+  <section id="claude-desktop">
+    <h2>Claude Desktop</h2>
+    <p>Add to your <code>claude_desktop_config.json</code> (Settings &rarr; Developer &rarr; Edit Config):</p>
+    <div class="code-block">
+      <button class="copy-btn" onclick="navigator.clipboard.writeText('{&quot;mcpServers&quot;:{&quot;better-bear&quot;:{&quot;command&quot;:&quot;npx&quot;,&quot;args&quot;:[&quot;-y&quot;,&quot;better-bear&quot;]}}}');this.textContent='Copied!'">Copy</button>
+      <code>{
+  "mcpServers": {
+    "better-bear": {
+      "command": "npx",
+      "args": ["-y", "better-bear"]
+    }
+  }
+}</code>
+    </div>
+    <p>Restart Claude Desktop after saving. Requires <a href="https://nodejs.org">Node.js 18+</a> and the <code>bcli</code> binary (see <a href="#cli-install">CLI Install</a>).</p>
+  </section>
+
+  <hr>
+
+  <section id="claude-code">
+    <h2>Claude Code</h2>
+    <div class="code-block">
+      <button class="copy-btn" onclick="navigator.clipboard.writeText('claude mcp add better-bear -- npx -y better-bear');this.textContent='Copied!'">Copy</button>
+      <code>claude mcp add better-bear -- npx -y better-bear</code>
+    </div>
+  </section>
+
+  <hr>
+
+  <section id="mcpb">
+    <h2>One-Click Install (.mcpb)</h2>
+    <p>Download the <a href="https://github.com/mreider/better-bear-cli/releases/latest">latest .mcpb bundle</a> from GitHub Releases and double-click to install in Claude Desktop.</p>
+  </section>
+
+  <hr>
+
+  <section id="cli-install">
+    <h2>CLI Install &amp; Upgrade</h2>
+    <p>The <code>bcli</code> binary is required by both the MCP server and the terminal CLI.</p>
     <h3>Quick install</h3>
-    <div class="code-block"><code>curl -sL https://raw.githubusercontent.com/mreider/better-bear-cli/main/install.sh | bash
-bcli auth</code></div>
+    <div class="code-block">
+      <button class="copy-btn" onclick="navigator.clipboard.writeText('curl -sL https://raw.githubusercontent.com/mreider/better-bear-cli/main/install.sh | bash');this.textContent='Copied!'">Copy</button>
+      <code>curl -sL https://raw.githubusercontent.com/mreider/better-bear-cli/main/install.sh | bash
+bcli auth</code>
+    </div>
+    <p>The installer will offer to configure the MCP server for Claude Desktop. Or pass <code>--mcp</code> to set it up automatically.</p>
     <h3>Upgrade</h3>
     <div class="code-block"><code>bcli upgrade         # download latest
 bcli upgrade --check # check only</code></div>
@@ -245,9 +381,11 @@ cp .build/release/bcli ~/.local/bin/bcli</code></div>
 
   <hr>
 
-  <section id="mcp">
-    <h2>MCP Server</h2>
-    <p>22 tools for <a href="https://claude.ai/download">Claude Desktop</a>. Install: <code>cd mcp-server && npm install && npm run build && cd .. && bcli mcp install</code></p>
+  <section id="mcp-tools">
+    <h2>MCP Tools</h2>
+    <p>29 tools available in <a href="#claude-desktop">Claude Desktop</a>, <a href="#claude-code">Claude Code</a>, and any MCP client. <code>npm: better-bear</code></p>
+
+    <h3>Bear notes</h3>
     <table>
       <tr><td>bear_sync</td><td>Sync from iCloud</td></tr>
       <tr><td>bear_list_notes</td><td>List with tag/archive/trash filters</td></tr>
@@ -271,6 +409,18 @@ cp .build/release/bcli ~/.local/bin/bcli</code></div>
       <tr><td>bear_find_duplicates</td><td>Find duplicate titles</td></tr>
       <tr><td>bear_health_check</td><td>Library health report</td></tr>
     </table>
+
+    <h3>Context library</h3>
+    <table>
+      <tr><td>bear_context_setup</td><td>Initialize the context library</td></tr>
+      <tr><td>bear_context_sync</td><td>Sync qualifying Bear notes to the library</td></tr>
+      <tr><td>bear_context_index</td><td>Get the index + freshness metadata</td></tr>
+      <tr><td>bear_context_fetch</td><td>Load specific files by path</td></tr>
+      <tr><td>bear_context_search</td><td>Full-text search across all files</td></tr>
+      <tr><td>bear_context_add</td><td>Tag a note for inclusion</td></tr>
+      <tr><td>bear_context_remove</td><td>Untag and remove a note</td></tr>
+      <tr><td>bear_context_status</td><td>Health stats and warnings</td></tr>
+    </table>
   </section>
 
   <hr>
@@ -292,9 +442,64 @@ cp .build/release/bcli ~/.local/bin/bcli</code></div>
 
   <hr>
 
+  <section id="use-cases">
+    <h2>Use Cases</h2>
+
+    <h3>Give Claude your project context</h3>
+    <p>Tag architecture docs, design decisions, and tickets with <code>#context</code>. When you ask Claude about your project, it reads the index, pulls the relevant notes, and answers grounded in your actual docs &mdash; not hallucinations.</p>
+    <div class="code-block"><code><strong>You:</strong>   "Why did we choose PostgreSQL over DynamoDB?"
+<strong>Claude:</strong> [fetches architecture-decisions.md]
+        According to your architecture decision record from January:
+        you chose PostgreSQL for strong consistency on billing data
+        and to avoid vendor lock-in on the data layer.</code></div>
+
+    <h3>Daily standup prep</h3>
+    <p>Claude searches your notes for what changed this week, surfaces open TODOs, and drafts a standup update.</p>
+    <div class="code-block"><code><strong>You:</strong>   "What did I work on this week? Check my context and my recent notes."
+<strong>Claude:</strong> [bear_context_search + bear_search --since last-week]
+        This week you updated the auth migration plan, closed JIRA-1289,
+        and have 3 open TODOs in your sprint planning note.</code></div>
+
+    <h3>Research and writing</h3>
+    <p>Keep reference material in Bear, tag it <code>#context/research</code>. Ask Claude to synthesize, compare, or draft from your sources.</p>
+    <div class="code-block"><code><strong>You:</strong>   "Compare the three vendor proposals in my context"
+<strong>Claude:</strong> [fetches vendor-a.md, vendor-b.md, vendor-c.md]
+        Here's a comparison table across pricing, SLA, and integration
+        complexity based on the three proposals in your library...</code></div>
+
+    <h3>Incident response</h3>
+    <p>During an outage, drop the Slack thread and Grafana findings into <code>inbox/</code>. Claude triages them, and you build a post-mortem note in Bear with full context.</p>
+    <div class="code-block"><code><strong>You:</strong>   "Create a post-mortem note from today's outage context"
+<strong>Claude:</strong> [reads incident notes from context library]
+        Created "2026-04-12 Outage Post-Mortem" with timeline, root cause
+        (connection pool exhaustion), and 3 action items. Tagged #context/incidents.</code></div>
+
+    <h3>CLI power user workflows</h3>
+    <p>Everything Claude does via MCP, you can do from the terminal. Chain commands for automation.</p>
+    <div class="code-block"><code># Morning routine: sync, check health, see what's stale
+bcli context sync && bcli context status
+
+# Find notes about payments, tag them for context
+bcli search "payment" --json | jq -r '.[].id' | while read id; do
+  bcli context add "$id" --subtag payments
+done
+
+# Export context library for offline use
+bcli context fetch bear/arch-overview.md > /tmp/arch.md
+
+# Weekly cleanup: find notes with no tags, check for duplicates
+bcli ls --untagged --json | jq '.[].title'
+bcli duplicates</code></div>
+
+    <h3>Team knowledge base</h3>
+    <p>Everyone tags shared docs with <code>#context</code> in Bear. Each team member syncs the same library. Claude answers questions consistently because everyone's working from the same source material.</p>
+  </section>
+
+  <hr>
+
   <section id="how">
     <h2>How It Works</h2>
-    <p>Same CloudKit REST API as <a href="https://web.bear.app">Bear Web</a>. Notes live in your iCloud private database. Does not touch Bear's local SQLite — safe to use with Bear open on any device.</p>
+    <p>Same CloudKit REST API as <a href="https://web.bear.app">Bear Web</a>. Notes live in your iCloud private database. Does not touch Bear's local SQLite &mdash; safe to use with Bear open on any device.</p>
   </section>
 
   <div id="support" class="coffee">
@@ -303,6 +508,7 @@ cp .build/release/bcli ~/.local/bin/bcli</code></div>
 
   <footer>
     <a href="https://github.com/mreider/better-bear-cli">GitHub</a> &middot;
+    <a href="https://www.npmjs.com/package/better-bear">npm</a> &middot;
     <a href="https://github.com/mreider/better-bear-cli/issues">Issues</a> &middot;
     <a href="https://buymeacoffee.com/mreider">Support</a>
   </footer>

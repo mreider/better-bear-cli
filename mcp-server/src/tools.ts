@@ -637,4 +637,190 @@ export const tools: Record<string, ToolHandler> = {
     },
     buildArgs: () => ["health", "--json"],
   },
+
+  // --- Context Library Tools ---
+
+  bear_context_setup: {
+    tool: {
+      name: "bear_context_setup",
+      description:
+        "Initialize a context library — a curated, synced folder of Bear notes optimized for LLM consumption. Creates the directory structure and config. After setup, tag Bear notes with #context (or a custom prefix) and use bear_context_sync to pull them in. One-time operation.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          dir: {
+            type: "string",
+            description:
+              "Output directory for the context library (default: ~/.bear-context)",
+          },
+          tag_prefix: {
+            type: "string",
+            description:
+              "Tag prefix for qualifying notes (default: context). Notes tagged #context or #context/subtag will be included.",
+          },
+          use_frontmatter: {
+            type: "boolean",
+            description:
+              "Also include notes with context: true in YAML front matter (default: true)",
+          },
+        },
+      },
+    },
+    buildArgs: (input) => {
+      const args = ["context", "init", "--json"];
+      if (input.dir) args.push("--dir", String(input.dir));
+      if (input.tag_prefix)
+        args.push("--tag-prefix", String(input.tag_prefix));
+      if (input.use_frontmatter === true) args.push("--frontmatter");
+      return args;
+    },
+  },
+
+  bear_context_sync: {
+    tool: {
+      name: "bear_context_sync",
+      description:
+        "Sync qualifying Bear notes to the local context library. Adds new notes, updates changed notes, and removes notes that no longer qualify (tag removed, trashed, etc.). Regenerates the index. Only touches the bear/ directory — external/ and inbox/ are untouched. Call this when the user asks to sync, refresh, or update their context.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          force: {
+            type: "boolean",
+            description: "Force full re-sync (re-download all notes)",
+          },
+        },
+      },
+    },
+    buildArgs: (input) => {
+      const args = ["context", "sync", "--json"];
+      if (input.force) args.push("--force");
+      return args;
+    },
+  },
+
+  bear_context_index: {
+    tool: {
+      name: "bear_context_index",
+      description:
+        "Get the context library index — a structured table of contents of all files (Bear notes, external files, inbox). Read this FIRST before answering questions from context. Use it to identify which files to fetch, rather than loading everything. Includes cache freshness metadata.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {},
+      },
+    },
+    buildArgs: () => ["context", "index", "--json"],
+  },
+
+  bear_context_fetch: {
+    tool: {
+      name: "bear_context_fetch",
+      description:
+        "Load the full content of specific files from the context library. Pass relative paths like 'bear/arch-overview.md' or 'external/jira-ticket.md'. Use after reading the index to load only relevant files — never load everything.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          paths: {
+            type: "array",
+            items: { type: "string" },
+            description:
+              "File paths relative to context directory (e.g., 'bear/my-note.md')",
+          },
+        },
+        required: ["paths"],
+      },
+    },
+    buildArgs: (input) => {
+      const args = ["context", "fetch", "--json"];
+      const paths = input.paths as string[];
+      args.push(...paths);
+      return args;
+    },
+  },
+
+  bear_context_search: {
+    tool: {
+      name: "bear_context_search",
+      description:
+        "Full-text search across the entire context library (Bear notes + external files + inbox). Returns matching snippets with filenames and origin labels. Use when the index alone isn't enough to find the right file.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          query: {
+            type: "string",
+            description: "Search query (case-insensitive substring match)",
+          },
+          limit: {
+            type: "number",
+            description: "Maximum results (default: 5)",
+          },
+        },
+        required: ["query"],
+      },
+    },
+    buildArgs: (input) => {
+      const args = ["context", "search", String(input.query), "--json"];
+      if (input.limit) args.push("--limit", String(input.limit));
+      return args;
+    },
+  },
+
+  bear_context_add: {
+    tool: {
+      name: "bear_context_add",
+      description:
+        "Add a Bear note to the context library by tagging it with #context. Optionally specify a subtag for grouping (e.g., subtag 'jira' → #context/jira). Triggers a sync after tagging.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          id: {
+            type: "string",
+            description: "Note ID (uniqueIdentifier)",
+          },
+          subtag: {
+            type: "string",
+            description:
+              "Optional sub-tag for grouping (e.g., 'architecture', 'jira')",
+          },
+        },
+        required: ["id"],
+      },
+    },
+    buildArgs: (input) => {
+      const args = ["context", "add", String(input.id), "--json"];
+      if (input.subtag) args.push("--subtag", String(input.subtag));
+      return args;
+    },
+  },
+
+  bear_context_remove: {
+    tool: {
+      name: "bear_context_remove",
+      description:
+        "Remove a Bear note from the context library by removing its #context tag. Triggers a sync to delete the local file.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          id: {
+            type: "string",
+            description: "Note ID (uniqueIdentifier)",
+          },
+        },
+        required: ["id"],
+      },
+    },
+    buildArgs: (input) => ["context", "remove", String(input.id), "--json"],
+  },
+
+  bear_context_status: {
+    tool: {
+      name: "bear_context_status",
+      description:
+        "Get context library health and stats: Bear note count, external file count, inbox count, total tokens, last sync time, group breakdown, and warnings (stale cache, expired externals, oversized files, untriaged inbox items).",
+      inputSchema: {
+        type: "object" as const,
+        properties: {},
+      },
+    },
+    buildArgs: () => ["context", "status", "--json"],
+  },
 };

@@ -13,119 +13,135 @@ import {
 } from "./bcli.js";
 import { tools } from "./tools.js";
 
-const server = new Server(
-  {
-    name: "better-bear-mcp",
-    version: "0.1.0",
-  },
-  {
-    capabilities: {
-      tools: {},
+function createServer(): Server {
+  const server = new Server(
+    {
+      name: "better-bear",
+      version: "0.4.0",
     },
-  },
-);
+    {
+      capabilities: {
+        tools: {},
+      },
+    },
+  );
 
-server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: Object.values(tools).map((t) => t.tool),
-}));
+  server.setRequestHandler(ListToolsRequestSchema, async () => ({
+    tools: Object.values(tools).map((t) => t.tool),
+  }));
 
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const { name, arguments: input } = request.params;
-  const handler = tools[name];
+  server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    const { name, arguments: input } = request.params;
+    const handler = tools[name];
 
-  if (!handler) {
-    return {
-      content: [{ type: "text", text: `Unknown tool: ${name}` }],
-      isError: true,
-    };
-  }
-
-  const params = (input ?? {}) as Record<string, unknown>;
-
-  // Validate bear_edit_note: need at least one edit operation
-  if (name === "bear_edit_note") {
-    const hasAppend = params.append_text !== undefined;
-    const hasBody = params.body !== undefined;
-    const hasSetFm = params.set_frontmatter !== undefined &&
-      Object.keys(params.set_frontmatter as object).length > 0;
-    const hasRemoveFm = Array.isArray(params.remove_frontmatter) &&
-      (params.remove_frontmatter as unknown[]).length > 0;
-    const hasFm = hasSetFm || hasRemoveFm;
-
-    if (!hasAppend && !hasBody && !hasFm) {
+    if (!handler) {
       return {
-        content: [
-          {
-            type: "text",
-            text: "Provide 'append_text', 'body', 'set_frontmatter', or 'remove_frontmatter'.",
-          },
-        ],
+        content: [{ type: "text", text: `Unknown tool: ${name}` }],
         isError: true,
       };
     }
-    if (hasAppend && hasBody) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: "Provide either 'append_text' or 'body', not both.",
-          },
-        ],
-        isError: true,
-      };
+
+    const params = (input ?? {}) as Record<string, unknown>;
+
+    // Validate bear_edit_note: need at least one edit operation
+    if (name === "bear_edit_note") {
+      const hasAppend = params.append_text !== undefined;
+      const hasBody = params.body !== undefined;
+      const hasSetFm = params.set_frontmatter !== undefined &&
+        Object.keys(params.set_frontmatter as object).length > 0;
+      const hasRemoveFm = Array.isArray(params.remove_frontmatter) &&
+        (params.remove_frontmatter as unknown[]).length > 0;
+      const hasFm = hasSetFm || hasRemoveFm;
+
+      if (!hasAppend && !hasBody && !hasFm) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "Provide 'append_text', 'body', 'set_frontmatter', or 'remove_frontmatter'.",
+            },
+          ],
+          isError: true,
+        };
+      }
+      if (hasAppend && hasBody) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "Provide either 'append_text' or 'body', not both.",
+            },
+          ],
+          isError: true,
+        };
+      }
     }
-  }
 
-  try {
-    const args = handler.buildArgs(params);
-    let result: { stdout: string; stderr: string };
-
-    // Check if this tool needs stdin piping
-    const stdinData = handler.usesStdin?.(params) ?? null;
-    if (stdinData !== null) {
-      result = await execBcliWithStdinAndReauth(args, stdinData);
-    } else {
-      result = await execBcliWithReauth(args);
-    }
-
-    // Parse JSON output from bcli
-    const stdout = result.stdout.trim();
-    if (!stdout) {
-      return {
-        content: [{ type: "text", text: "Command completed successfully." }],
-      };
-    }
-
-    // Validate it's JSON and pretty-print
     try {
-      const parsed = JSON.parse(stdout);
+      const args = handler.buildArgs(params);
+      let result: { stdout: string; stderr: string };
+
+      // Check if this tool needs stdin piping
+      const stdinData = handler.usesStdin?.(params) ?? null;
+      if (stdinData !== null) {
+        result = await execBcliWithStdinAndReauth(args, stdinData);
+      } else {
+        result = await execBcliWithReauth(args);
+      }
+
+      // Parse JSON output from bcli
+      const stdout = result.stdout.trim();
+      if (!stdout) {
+        return {
+          content: [{ type: "text", text: "Command completed successfully." }],
+        };
+      }
+
+      // Validate it's JSON and pretty-print
+      try {
+        const parsed = JSON.parse(stdout);
+        return {
+          content: [
+            { type: "text", text: JSON.stringify(parsed, null, 2) },
+          ],
+        };
+      } catch {
+        // If bcli returned non-JSON, pass it through
+        return {
+          content: [{ type: "text", text: stdout }],
+        };
+      }
+    } catch (error) {
+      const message =
+        error instanceof BcliError ? error.message : String(error);
       return {
-        content: [
-          { type: "text", text: JSON.stringify(parsed, null, 2) },
-        ],
-      };
-    } catch {
-      // If bcli returned non-JSON, pass it through
-      return {
-        content: [{ type: "text", text: stdout }],
+        content: [{ type: "text", text: message }],
+        isError: true,
       };
     }
-  } catch (error) {
-    const message =
-      error instanceof BcliError ? error.message : String(error);
-    return {
-      content: [{ type: "text", text: message }],
-      isError: true,
-    };
-  }
-});
+  });
 
-async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+  return server;
 }
 
-main().catch((error) => {
-  console.error("Fatal error:", error);
-  process.exit(1);
-});
+// Smithery sandbox: allows tool scanning without bcli installed
+export function createSandboxServer(): Server {
+  return createServer();
+}
+
+// Default export for Smithery
+export default createServer;
+
+// Direct execution: connect via stdio
+const isDirectRun = process.argv[1]?.endsWith("index.js") ||
+  process.argv[1]?.endsWith("better-bear") ||
+  process.argv[1]?.endsWith("better-bear-mcp");
+
+if (isDirectRun) {
+  const server = createServer();
+  const transport = new StdioServerTransport();
+  server.connect(transport).catch((error) => {
+    console.error("Fatal error:", error);
+    process.exit(1);
+  });
+}

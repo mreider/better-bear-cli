@@ -4,6 +4,16 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'Sources/**'
+      - 'mcp-server/src/**'
+      - 'mcp-server/package.json'
+      - 'mcp-server/manifest.json'
+      - 'mcp-server/tsconfig.json'
+      - 'Package.swift'
+      - 'Package.resolved'
+      - 'install.sh'
+      - '.github/workflows/build-on-merge.yml'
 
 concurrency:
   group: release
@@ -11,6 +21,7 @@ concurrency:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   build:
@@ -32,7 +43,7 @@ jobs:
             echo "tag=${prefix}.$((patch + 1))" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Inject version into source
+      - name: Inject version into CLI source
         run: |
           VERSION="${{ steps.version.outputs.tag }}"
           VERSION_NUM="${VERSION#v}"
@@ -48,6 +59,57 @@ jobs:
           cd dist && tar czf bcli-macos-universal.tar.gz bcli
           shasum -a 256 bcli-macos-universal.tar.gz > bcli-macos-universal.tar.gz.sha256
 
+      # --- MCP Server: version bump, build, .mcpb bundle ---
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Inject version into MCP server
+        run: |
+          VERSION="${{ steps.version.outputs.tag }}"
+          VERSION_NUM="${VERSION#v}"
+          cd mcp-server
+          # Update package.json version
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.version = '${VERSION_NUM}';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+          # Update manifest.json version
+          node -e "
+            const fs = require('fs');
+            const m = JSON.parse(fs.readFileSync('manifest.json', 'utf8'));
+            m.version = '${VERSION_NUM}';
+            fs.writeFileSync('manifest.json', JSON.stringify(m, null, 2) + '\n');
+          "
+          # Update server.json version
+          node -e "
+            const fs = require('fs');
+            const s = JSON.parse(fs.readFileSync('server.json', 'utf8'));
+            s.version = '${VERSION_NUM}';
+            s.packages[0].version = '${VERSION_NUM}';
+            fs.writeFileSync('server.json', JSON.stringify(s, null, 2) + '\n');
+          "
+          # Update index.ts version
+          sed -i '' "s/version: \".*\"/version: \"${VERSION_NUM}\"/" src/index.ts
+
+      - name: Build MCP server
+        run: |
+          cd mcp-server
+          npm ci
+          npm run build
+
+      - name: Build .mcpb bundle
+        run: |
+          cd mcp-server
+          npx @anthropic-ai/mcpb pack .
+          mv *.mcpb ../dist/better-bear.mcpb
+
+      # --- Create GitHub Release (always, even if publish steps fail) ---
+
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
@@ -56,4 +118,30 @@ jobs:
           files: |
             dist/bcli-macos-universal.tar.gz
             dist/bcli-macos-universal.tar.gz.sha256
+            dist/better-bear.mcpb
           generate_release_notes: true
+
+      # --- Publish to registries (after release, so binaries are always available) ---
+
+      - name: Publish to npm
+        id: npm
+        run: |
+          if [ -z "$NPM_TOKEN" ]; then
+            echo "::error::NPM_TOKEN secret is missing or expired."
+            echo "::error::Go to https://www.npmjs.com/settings/mreider/tokens and create a new Automation token."
+            echo "::error::Then run: gh secret set NPM_TOKEN -R mreider/better-bear-cli"
+            exit 1
+          fi
+          cd mcp-server
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish to MCP Registry
+        run: |
+          brew install mcp-publisher
+          cd mcp-server
+          mcp-publisher login github-oidc
+          mcp-publisher publish
+        continue-on-error: true

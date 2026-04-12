@@ -23,38 +23,48 @@ public class AuthServer {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>bcli - Sign In</title>
-            <link rel="icon" type="image/png" href="/favicon.ico">
+            <title>better bear — Sign In</title>
             <style>
+                :root {
+                    --bg: #ffffff; --bg-card: #f9fafb; --text: #1a1a2e; --text-muted: #6b7280;
+                    --accent: #dd4c4f; --accent-hover: #c43c3f; --border: #e5e7eb;
+                    --input-bg: #ffffff; --input-border: #d1d5db;
+                    --manual-bg: #f3f4f6; --code-bg: #e5e7eb;
+                }
+                @media (prefers-color-scheme: dark) {
+                    :root {
+                        --bg: #0f1117; --bg-card: #1a1b23; --text: #e2e8f0; --text-muted: #94a3b8;
+                        --accent: #dd4c4f; --accent-hover: #e86568; --border: #2d2d3d;
+                        --input-bg: #1e1f2a; --input-border: #3d3e4d;
+                        --manual-bg: #161722; --code-bg: #2d2d3d;
+                    }
+                }
                 * { margin: 0; padding: 0; box-sizing: border-box; }
                 body {
-                    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
-                    background: #1d1d1f;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    background: var(--bg);
                     min-height: 100vh;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    color: #d1d1d6;
+                    color: var(--text);
+                    -webkit-font-smoothing: antialiased;
                 }
                 .container {
-                    background: #2c2c2e;
-                    border-radius: 14px;
-                    padding: 48px 44px;
-                    max-width: 400px;
+                    background: var(--bg-card);
+                    border: 1px solid var(--border);
+                    border-radius: 16px;
+                    padding: 36px 36px;
+                    max-width: 380px;
                     width: 90%;
-                    box-shadow: 0 2px 20px rgba(0,0,0,0.35);
                     text-align: center;
                 }
-                .bear-icon {
-                    width: 64px; height: 64px; margin: 0 auto 20px;
-                    border-radius: 14px;
-                }
                 h1 {
-                    font-size: 20px; font-weight: 600; margin-bottom: 6px;
-                    color: #f5f5f7; letter-spacing: -0.2px;
+                    font-size: 22px; font-weight: 700; margin-bottom: 6px;
+                    color: var(--text); letter-spacing: -0.3px;
                 }
                 .subtitle {
-                    font-size: 13px; color: #98989d; margin-bottom: 28px;
+                    font-size: 14px; color: var(--text-muted); margin-bottom: 32px;
                     line-height: 1.5;
                 }
                 #apple-sign-in-button {
@@ -63,64 +73,66 @@ public class AuthServer {
                 }
                 .custom-apple-btn {
                     display: inline-flex; align-items: center; justify-content: center;
-                    gap: 8px; padding: 0 24px; height: 44px;
-                    background: #fff; color: #1d1d1f; border: none; border-radius: 8px;
-                    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
-                    font-size: 15px; font-weight: 500; cursor: pointer;
-                    transition: opacity 0.15s;
+                    gap: 8px; padding: 0 28px; height: 46px;
+                    background: var(--accent); color: #fff; border: none; border-radius: 10px;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    font-size: 15px; font-weight: 600; cursor: pointer;
+                    transition: background 0.2s;
                 }
-                .custom-apple-btn:hover { opacity: 0.88; }
+                .custom-apple-btn:hover { background: var(--accent-hover); }
                 .custom-apple-btn svg { flex-shrink: 0; }
                 #apple-sign-out-button { display: none; }
                 .status {
-                    margin-top: 20px; font-size: 13px; color: #98989d;
+                    margin-top: 20px; font-size: 13px; color: var(--text-muted);
                     min-height: 20px;
                 }
-                .status.error { color: #ff6961; }
-                .status.success {
-                    color: #d4a853;
-                    font-weight: 500;
-                }
+                .status.error { color: #ef4444; }
+                .status.success { color: #22c55e; font-weight: 600; }
                 .manual {
-                    display: none; margin-top: 24px; padding: 18px;
-                    background: #1d1d1f; border: 1px solid #3a3a3c;
+                    display: none; margin-top: 28px; padding: 20px;
+                    background: var(--manual-bg); border: 1px solid var(--border);
                     border-radius: 10px; text-align: left;
-                    font-size: 12px; line-height: 1.6; color: #98989d;
+                    font-size: 13px; line-height: 1.7; color: var(--text-muted);
                 }
-                .manual strong { color: #d1d1d6; }
-                .manual ol { margin: 10px 0 10px 18px; }
-                .manual a { color: #d4a853; text-decoration: none; }
+                .manual strong { color: var(--text); font-size: 13px; }
+                .manual ol { margin: 10px 0 12px 18px; }
+                .manual a { color: var(--accent); text-decoration: none; }
                 .manual a:hover { text-decoration: underline; }
                 .manual code {
-                    background: #3a3a3c; padding: 2px 6px;
-                    border-radius: 4px; font-size: 11px; color: #d1d1d6;
+                    background: var(--code-bg); padding: 2px 6px;
+                    border-radius: 4px; font-size: 11px; color: var(--text);
+                    font-family: 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
                 }
                 .manual input {
-                    width: 100%; font-family: 'SF Mono', SFMono-Regular, Menlo, monospace;
-                    font-size: 11px; background: #3a3a3c; color: #f5f5f7;
-                    border: 1px solid #48484a; border-radius: 6px;
-                    padding: 8px 10px; margin-top: 8px;
-                    outline: none; transition: border-color 0.15s;
+                    width: 100%; font-family: 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+                    font-size: 12px; background: var(--input-bg); color: var(--text);
+                    border: 1px solid var(--input-border); border-radius: 8px;
+                    padding: 10px 12px; margin-top: 10px;
+                    outline: none; transition: border-color 0.2s;
                 }
-                .manual input:focus { border-color: #d4a853; }
+                .manual input:focus { border-color: var(--accent); }
                 .manual button {
-                    margin-top: 8px; padding: 8px 18px;
-                    background: #d4a853; color: #1d1d1f;
-                    border: none; border-radius: 6px;
-                    font-size: 12px; font-weight: 600; cursor: pointer;
-                    transition: opacity 0.15s;
+                    margin-top: 10px; padding: 9px 20px;
+                    background: var(--accent); color: #fff;
+                    border: none; border-radius: 8px;
+                    font-size: 13px; font-weight: 600; cursor: pointer;
+                    transition: background 0.2s;
                 }
-                .manual button:hover { opacity: 0.85; }
+                .manual button:hover { background: var(--accent-hover); }
                 .debug { display: none; }
+                .footer {
+                    margin-top: 28px; font-size: 12px; color: var(--text-muted);
+                }
+                .footer a { color: var(--text-muted); text-decoration: underline; }
+                .footer a:hover { color: var(--accent); }
             </style>
         </head>
         <body>
             <div class="container">
-                <img class="bear-icon" src="/icon" alt="Bear" />
-                <h1>bcli Authentication</h1>
+                <h1>better bear</h1>
                 <p class="subtitle">Sign in with your Apple ID to connect to your Bear notes via iCloud.</p>
                 <button class="custom-apple-btn" id="custom-apple-btn" style="display:none" onclick="document.querySelector('#apple-sign-in-button .apple-auth-button').click()">
-                    <svg width="16" height="19" viewBox="0 0 16 19" fill="none"><path d="M13.2 9.94c-.02-2.08 1.7-3.08 1.78-3.13-1-1.4-2.5-1.6-3.02-1.62-1.27-.13-2.52.76-3.17.76-.67 0-1.68-.74-2.77-.72A4.08 4.08 0 002.57 7.4c-1.5 2.58-.38 6.38 1.05 8.47.72 1.02 1.56 2.17 2.67 2.13 1.08-.04 1.49-.69 2.79-.69 1.29 0 1.66.69 2.78.66 1.16-.02 1.88-1.03 2.58-2.06.83-1.18 1.16-2.34 1.18-2.4-.03-.01-2.24-.85-2.26-3.4l-.14.83zM10.93 3.52A3.75 3.75 0 0011.8.5a3.86 3.86 0 00-2.5 1.3 3.6 3.6 0 00-.9 2.9 3.2 3.2 0 002.53-1.18z" fill="#1d1d1f"/></svg>
+                    <svg width="16" height="19" viewBox="0 0 16 19" fill="none"><path d="M13.2 9.94c-.02-2.08 1.7-3.08 1.78-3.13-1-1.4-2.5-1.6-3.02-1.62-1.27-.13-2.52.76-3.17.76-.67 0-1.68-.74-2.77-.72A4.08 4.08 0 002.57 7.4c-1.5 2.58-.38 6.38 1.05 8.47.72 1.02 1.56 2.17 2.67 2.13 1.08-.04 1.49-.69 2.79-.69 1.29 0 1.66.69 2.78.66 1.16-.02 1.88-1.03 2.58-2.06.83-1.18 1.16-2.34 1.18-2.4-.03-.01-2.24-.85-2.26-3.4l-.14.83zM10.93 3.52A3.75 3.75 0 0011.8.5a3.86 3.86 0 00-2.5 1.3 3.6 3.6 0 00-.9 2.9 3.2 3.2 0 002.53-1.18z" fill="#fff"/></svg>
                     Sign in with Apple
                 </button>
                 <div id="apple-sign-in-button"></div>
@@ -141,10 +153,10 @@ public class AuthServer {
                 </script>
                 <p class="status" id="status">Loading CloudKit JS...</p>
                 <div class="manual" id="manual">
-                    <strong>Manual token flow:</strong>
+                    <strong>Manual token entry</strong>
                     <ol>
                         <li>Open <a href="https://web.bear.app" target="_blank">web.bear.app</a> and sign in</li>
-                        <li>Open DevTools (Cmd+Option+I) then Network tab</li>
+                        <li>Open DevTools (Cmd+Option+I), then the Network tab</li>
                         <li>Look for requests to <code>apple-cloudkit.com</code></li>
                         <li>Copy the <code>ckWebAuthToken</code> value from any request URL</li>
                     </ol>
@@ -152,6 +164,7 @@ public class AuthServer {
                     <button onclick="submitManualToken()">Submit Token</button>
                 </div>
                 <div class="debug" id="debug"></div>
+                <p class="footer"><a href="https://better-bear.com" target="_blank">better-bear.com</a></p>
             </div>
             <script>
                 const PORT = \(actualPort);
