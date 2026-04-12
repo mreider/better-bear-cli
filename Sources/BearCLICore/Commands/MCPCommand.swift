@@ -25,9 +25,12 @@ struct MCPInstall: ParsableCommand {
     @Flag(name: .long, help: "Only configure Claude Code")
     var codeOnly = false
 
+    @Flag(name: .long, help: "Write to claude_desktop_config.json instead of using .mcpb bundle")
+    var json = false
+
     func run() throws {
         if !codeOnly {
-            try installDesktop()
+            try installDesktop(useJson: json)
         }
         if !desktopOnly {
             installCode()
@@ -71,7 +74,7 @@ struct MCPReinstall: ParsableCommand {
         try uninstallDesktop()
         uninstallCode()
         print("")
-        try installDesktop()
+        try installDesktop(useJson: false)
         installCode()
     }
 }
@@ -145,8 +148,49 @@ private func writeClaudeConfig(_ config: [String: Any], to url: URL) throws {
     try data.write(to: url)
 }
 
+private let mcpbURL = "https://github.com/mreider/better-bear-cli/releases/latest/download/better-bear.mcpb"
+
 @discardableResult
-private func installDesktop() throws -> Bool {
+private func installDesktop(useJson: Bool) throws -> Bool {
+    if useJson {
+        return try installDesktopJson()
+    }
+    return try installDesktopMcpb()
+}
+
+private func installDesktopMcpb() throws -> Bool {
+    // Download .mcpb bundle to temp directory
+    let tmpDir = FileManager.default.temporaryDirectory
+        .appendingPathComponent("better-bear-install")
+    try? FileManager.default.removeItem(at: tmpDir)
+    try FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
+    let mcpbPath = tmpDir.appendingPathComponent("better-bear.mcpb")
+
+    print("Claude Desktop: downloading .mcpb bundle...")
+    let result = runShell("curl -sL '\(mcpbURL)' -o '\(mcpbPath.path)'")
+    guard result.status == 0, FileManager.default.fileExists(atPath: mcpbPath.path) else {
+        print("Claude Desktop: failed to download .mcpb bundle")
+        print("  Download manually: \(mcpbURL)")
+        throw ExitCode.failure
+    }
+
+    // Remove any config-file entry to avoid duplicates
+    cleanConfigFileEntry()
+
+    // Open the .mcpb with Claude Desktop
+    let open = runShell("open '\(mcpbPath.path)'")
+    guard open.status == 0 else {
+        print("Claude Desktop: failed to open .mcpb bundle")
+        print("  Open manually: \(mcpbPath.path)")
+        throw ExitCode.failure
+    }
+
+    print("Claude Desktop: opened .mcpb bundle — confirm install in Claude Desktop")
+    print("  Uninstall via Claude Desktop UI or: bcli mcp uninstall")
+    return true
+}
+
+private func installDesktopJson() throws -> Bool {
     let configURL = claudeDesktopConfigURL()
     var config = readClaudeConfig(at: configURL)
 
@@ -164,46 +208,60 @@ private func installDesktop() throws -> Bool {
     }
 
     if servers[mcpKey] != nil {
-        print("Claude Desktop: already installed")
+        print("Claude Desktop: already installed (config file)")
         return false
     }
 
     servers[mcpKey] = mcpEntry
     config["mcpServers"] = servers
     try writeClaudeConfig(config, to: configURL)
-    print("Claude Desktop: installed — restart Claude Desktop to activate")
-    print("  To uninstall, use: bcli mcp uninstall (not the Claude Desktop UI)")
+    print("Claude Desktop: installed via config file — restart Claude Desktop to activate")
+    print("  Uninstall via: bcli mcp uninstall (Claude Desktop UI won't work for config-file servers)")
     return true
+}
+
+/// Remove config-file entries so they don't conflict with .mcpb extension
+private func cleanConfigFileEntry() {
+    let configURL = claudeDesktopConfigURL()
+    guard FileManager.default.fileExists(atPath: configURL.path) else { return }
+    var config = readClaudeConfig(at: configURL)
+    guard var servers = config["mcpServers"] as? [String: Any] else { return }
+
+    var changed = false
+    if servers[mcpKey] != nil { servers.removeValue(forKey: mcpKey); changed = true }
+    if servers[legacyMcpKey] != nil { servers.removeValue(forKey: legacyMcpKey); changed = true }
+    if changed {
+        config["mcpServers"] = servers
+        try? writeClaudeConfig(config, to: configURL)
+    }
 }
 
 @discardableResult
 private func uninstallDesktop() throws -> Bool {
     let configURL = claudeDesktopConfigURL()
-    guard FileManager.default.fileExists(atPath: configURL.path) else {
-        print("Claude Desktop: not installed")
-        return false
+    var removed = false
+
+    // Remove config-file entries
+    if FileManager.default.fileExists(atPath: configURL.path),
+       var config = readClaudeConfig(at: configURL) as [String: Any]?,
+       var servers = config["mcpServers"] as? [String: Any] {
+        let hadCurrent = servers[mcpKey] != nil
+        let hadLegacy = servers[legacyMcpKey] != nil
+        if hadCurrent || hadLegacy {
+            servers.removeValue(forKey: mcpKey)
+            servers.removeValue(forKey: legacyMcpKey)
+            config["mcpServers"] = servers
+            try writeClaudeConfig(config, to: configURL)
+            print("Claude Desktop: removed config-file entry")
+            removed = true
+        }
     }
 
-    var config = readClaudeConfig(at: configURL)
-    guard var servers = config["mcpServers"] as? [String: Any] else {
-        print("Claude Desktop: not installed")
-        return false
+    if !removed {
+        print("Claude Desktop: no config-file entry found")
+        print("  If installed via .mcpb, remove it from Claude Desktop's connectors UI")
     }
-
-    let hadCurrent = servers[mcpKey] != nil
-    let hadLegacy = servers[legacyMcpKey] != nil
-
-    guard hadCurrent || hadLegacy else {
-        print("Claude Desktop: not installed")
-        return false
-    }
-
-    servers.removeValue(forKey: mcpKey)
-    servers.removeValue(forKey: legacyMcpKey)
-    config["mcpServers"] = servers
-    try writeClaudeConfig(config, to: configURL)
-    print("Claude Desktop: removed")
-    return true
+    return removed
 }
 
 // MARK: - Claude Code

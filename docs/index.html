@@ -106,7 +106,6 @@
     <a href="#context-library">Context Library</a>
     <a href="#claude-desktop">Claude Desktop</a>
     <a href="#claude-code">Claude Code</a>
-    <a href="#mcpb">One-Click Install</a>
     <a href="#cli-install">CLI Install</a>
     <a href="#use-cases">Use Cases</a>
     <a href="#how">How It Works</a>
@@ -182,10 +181,10 @@ bcli context sync</code></div>
       <button class="copy-btn" onclick="navigator.clipboard.writeText('bcli mcp install --desktop-only');this.textContent='Copied!'">Copy</button>
       <code>bcli mcp install --desktop-only</code>
     </div>
-    <p>This adds the <code>better-bear</code> entry to your <code>claude_desktop_config.json</code> automatically. Restart Claude Desktop to activate.</p>
+    <p>This downloads the <code>.mcpb</code> bundle and opens it in Claude Desktop. Confirm the install in the dialog that appears.</p>
 
     <h3>Manual install</h3>
-    <p>Or edit your config directly (Settings &rarr; Developer &rarr; Edit Config):</p>
+    <p>Download the <a href="https://github.com/mreider/better-bear-cli/releases/latest">latest .mcpb bundle</a> from GitHub Releases and double-click to install. Or edit your config directly (Settings &rarr; Developer &rarr; Edit Config):</p>
     <div class="code-block">
       <button class="copy-btn" onclick="navigator.clipboard.writeText('{&quot;mcpServers&quot;:{&quot;better-bear&quot;:{&quot;command&quot;:&quot;npx&quot;,&quot;args&quot;:[&quot;-y&quot;,&quot;better-bear&quot;]}}}');this.textContent='Copied!'">Copy</button>
       <code>{
@@ -197,17 +196,13 @@ bcli context sync</code></div>
   }
 }</code>
     </div>
-    <p>Restart Claude Desktop after saving.</p>
+    <p>Restart Claude Desktop after saving. Use <code>bcli mcp install --json</code> to write this config automatically.</p>
 
     <h3>Manage</h3>
     <div class="code-block"><code>bcli mcp status      # check what's configured
 bcli mcp uninstall   # remove from Claude Desktop and Claude Code
 bcli mcp reinstall   # clean uninstall + install</code></div>
     <p>Use <code>--desktop-only</code> or <code>--code-only</code> with install/uninstall to target one client.</p>
-
-    <div class="callout">
-      <strong>Uninstall:</strong> Always use <code>bcli mcp uninstall</code> to remove the MCP server. The uninstall button in Claude Desktop's UI does not work for config-file MCP servers and will show an error.
-    </div>
 
     <p>Requires <a href="https://nodejs.org">Node.js 18+</a> and the <code>bcli</code> binary (see <a href="#cli-install">CLI Install</a>).</p>
   </section>
@@ -226,13 +221,6 @@ bcli mcp reinstall   # clean uninstall + install</code></div>
       <button class="copy-btn" onclick="navigator.clipboard.writeText('claude mcp add better-bear -- npx -y better-bear');this.textContent='Copied!'">Copy</button>
       <code>claude mcp add better-bear -- npx -y better-bear</code>
     </div>
-  </section>
-
-  <hr>
-
-  <section id="mcpb">
-    <h2>One-Click Install (.mcpb)</h2>
-    <p>Download the <a href="https://github.com/mreider/better-bear-cli/releases/latest">latest .mcpb bundle</a> from GitHub Releases and double-click to install in Claude Desktop.</p>
   </section>
 
   <hr>
