@@ -23,11 +23,29 @@ permissions:
   contents: write
   id-token: write
   attestations: write
+  actions: write
 
 jobs:
   build:
     runs-on: macos-15
     steps:
+      - name: Clean old artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/${{ github.repository }}/actions/artifacts \
+            --paginate --jq '.artifacts[].id' | while read id; do
+            gh api -X DELETE repos/${{ github.repository }}/actions/artifacts/$id || true
+          done
+      - name: Clean old caches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/${{ github.repository }}/actions/caches \
+            --jq '.actions_caches[].id' | while read id; do
+            gh api -X DELETE repos/${{ github.repository }}/actions/caches/$id || true
+          done
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
