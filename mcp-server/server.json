@@ -7,6 +7,29 @@
     "source": "github"
   },
   "version": "0.4.0",
+  "tools": [
+    { "name": "bear_sync", "description": "Sync notes from iCloud" },
+    { "name": "bear_list_notes", "description": "List notes with filters" },
+    { "name": "bear_get_note", "description": "Get full note content" },
+    { "name": "bear_search", "description": "Full-text search with date filters" },
+    { "name": "bear_create_note", "description": "Create a new note" },
+    { "name": "bear_edit_note", "description": "Edit note body, sections, or front matter" },
+    { "name": "bear_trash_note", "description": "Move note to trash" },
+    { "name": "bear_archive_note", "description": "Archive or unarchive a note" },
+    { "name": "bear_get_tags", "description": "List all tags" },
+    { "name": "bear_add_tag", "description": "Add tag to a note" },
+    { "name": "bear_remove_tag", "description": "Remove tag from a note" },
+    { "name": "bear_rename_tag", "description": "Rename a tag everywhere" },
+    { "name": "bear_delete_tag", "description": "Delete a tag everywhere" },
+    { "name": "bear_find_untagged", "description": "Find notes with no tags" },
+    { "name": "bear_attach_file", "description": "Attach files or images" },
+    { "name": "bear_list_todos", "description": "List notes with TODOs" },
+    { "name": "bear_get_todos", "description": "Get TODO items in a note" },
+    { "name": "bear_toggle_todo", "description": "Toggle TODO complete/incomplete" },
+    { "name": "bear_note_stats", "description": "Library statistics" },
+    { "name": "bear_find_duplicates", "description": "Find duplicate titles" },
+    { "name": "bear_health_check", "description": "Diagnose library issues" }
+  ],
   "packages": [
     {
       "registryType": "npm",
