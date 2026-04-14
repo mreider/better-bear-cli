@@ -1,12 +1,12 @@
 # better bear
 
-[![better-bear MCP server](https://glama.ai/mcp/servers/mreider/better-bear/badges/card.svg)](https://glama.ai/mcp/servers/mreider/better-bear)
+[![better-bear MCP server](https://glama.ai/mcp/servers/KuvopLLC/better-bear/badges/card.svg)](https://glama.ai/mcp/servers/KuvopLLC/better-bear)
 
 [![Build](https://github.com/KuvopLLC/better-bear/actions/workflows/build-on-merge.yml/badge.svg)](https://github.com/KuvopLLC/better-bear/actions/workflows/build-on-merge.yml)
 [![Release](https://img.shields.io/github/v/release/KuvopLLC/better-bear)](https://github.com/KuvopLLC/better-bear/releases/latest)
 [![npm](https://img.shields.io/npm/v/better-bear)](https://www.npmjs.com/package/better-bear)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/KuvopLLC/better-bear/blob/main/LICENSE)
-[![better-bear MCP server](https://glama.ai/mcp/servers/mreider/better-bear/badges/score.svg)](https://glama.ai/mcp/servers/mreider/better-bear)
+[![better-bear MCP server](https://glama.ai/mcp/servers/KuvopLLC/better-bear/badges/score.svg)](https://glama.ai/mcp/servers/KuvopLLC/better-bear)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-orange?logo=buy-me-a-coffee&logoColor=white)](https://buymeacoffee.com/mreider)
 
 MCP server and CLI for [Bear](https://bear.app) notes via CloudKit. Includes a **context library** — a curated, synced folder of notes optimized for LLM consumption, inspired by [Karpathy's LLM Knowledge Base](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) pattern.

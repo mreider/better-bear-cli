@@ -1,7 +1,7 @@
 # better-bear
 
-[![better-bear MCP server](https://glama.ai/mcp/servers/mreider/better-bear/badges/card.svg)](https://glama.ai/mcp/servers/mreider/better-bear)
-[![better-bear MCP server](https://glama.ai/mcp/servers/mreider/better-bear/badges/score.svg)](https://glama.ai/mcp/servers/mreider/better-bear)
+[![better-bear MCP server](https://glama.ai/mcp/servers/KuvopLLC/better-bear/badges/card.svg)](https://glama.ai/mcp/servers/KuvopLLC/better-bear)
+[![better-bear MCP server](https://glama.ai/mcp/servers/KuvopLLC/better-bear/badges/score.svg)](https://glama.ai/mcp/servers/KuvopLLC/better-bear)
 
 MCP server for [Bear](https://bear.app) notes. Read, search, create, edit, tag, and manage your notes from Claude Desktop, Claude Code, or any MCP client. Includes a **context library** for building curated, LLM-optimized knowledge bases from your notes.
 
