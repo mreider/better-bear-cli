@@ -45,11 +45,11 @@
     "url": "https://github.com/mreider/better-bear/issues"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.12.1"
+    "@modelcontextprotocol/sdk": "^1.29.0"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.7.0"
+    "@types/node": "^25.6.0",
+    "typescript": "^6.0.2"
   },
   "engines": {
     "node": ">=18"
