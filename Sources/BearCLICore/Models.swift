@@ -339,6 +339,15 @@ public struct BearNote {
 
         self.hasFiles = record.fields["hasFiles"]?.value.intValue == 1
     }
+
+    /// Leaf-only view of `tags`: entries with no strict descendant in `tags`.
+    /// `tags` mirrors CloudKit's `tagsStrings` exactly (may include ancestor
+    /// expansions like `parent` when the note is tagged `parent/child`);
+    /// `attachedTags` drops those ancestors so callers can see only the
+    /// most-specific tag on each branch.
+    public var attachedTags: [String] {
+        TagParser.leafTags(tags)
+    }
 }
 
 public struct BearTag {

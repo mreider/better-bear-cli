@@ -174,7 +174,20 @@ public struct EditNote: ParsableCommand {
                 return
             }
 
-            let updated = try await api.updateNote(record: record, newText: newText)
+            // Re-derive the tag index from the new body so Bear's sidebar
+            // stays in sync with whatever hashtags the user left in the
+            // markdown. This also heals notes broken by the pre-fix
+            // createNote bug: simply editing the note will re-index its
+            // body hashtags.
+            let bodyTags = TagParser.extractTags(from: newText)
+            let indexedTags = TagParser.expandAncestors(bodyTags)
+            let nameToUUID = try await api.ensureTagsExist(names: indexedTags)
+            let tagUUIDs = indexedTags.compactMap { nameToUUID[$0] }
+
+            let updated = try await api.updateNote(
+                record: record, newText: newText,
+                tagUUIDs: tagUUIDs, tagStrings: indexedTags
+            )
             let note = BearNote(from: updated)
 
             if json {

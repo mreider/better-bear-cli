@@ -415,6 +415,7 @@ Constructed from a `CKRecord`. Fields:
 | `uniqueIdentifier` | String | `uniqueIdentifier` | falls back to `recordName` |
 | `title` | String | `title` | "(untitled)" |
 | `tags` | [String] | `tagsStrings` (array of strings) | [] |
+| `attachedTags` | [String] | derived — `tags` with ancestor entries filtered out | computed |
 | `pinned` | Bool | `pinned` == 1 | false |
 | `archived` | Bool | `archived` == 1 | false |
 | `trashed` | Bool | `trashed` == 1 | false |
@@ -425,6 +426,11 @@ Constructed from a `CKRecord`. Fields:
 | `modificationDate` | Date? | `sf_modificationDate` (ms epoch) | nil |
 | `textAssetURL` | String? | `text.downloadURL` (from dict) | nil |
 | `hasFiles` | Bool | `hasFiles` == 1 | false |
+
+**Tag field semantics:**
+
+- `tags` mirrors CloudKit's `tagsStrings` field verbatim. For hierarchical tags, this array contains every ancestor as a separate entry — a note tagged `#parent/child` yields `tags == ["parent/child", "parent"]`. This matches how the Bear desktop app populates the index when the user types a hierarchical hashtag.
+- `attachedTags` is the derived leaf view: each entry in `tags` that has no strict descendant elsewhere in `tags`. For the same note above, `attachedTags == ["parent/child"]`. Use `attachedTags` when you want "the most specific tag on each branch".
 
 ### BearTag (domain model)
 
@@ -773,13 +779,14 @@ Create a new note.
 
 **Behavior:**
 1. Determine the body text: from `--body`, from `--stdin` (reads all input, strips trailing newline), or empty
-2. Parse tags: split `--tags` value by commas, trim whitespace from each
-3. Build markdown content: `# Title` on the first line, then tag hashtags (e.g., `#tag1 #tag2`) on the next line, then the body after a blank line
-4. Look up existing tags. For each tag:
+2. Parse tags from `--tags` (split by comma, trim each) and from hashtags inside the body text. Body extraction follows Bear's conventions: `#tag` / `#parent/child` at line start or after whitespace, `#multi word tag#` bracketed form. YAML front matter, fenced code blocks, inline code spans, and markdown headings are skipped.
+3. Union the two tag lists (explicit first, body-order second, de-duplicated), then expand hierarchical ancestors — `a/b/c` yields `["a/b/c", "a/b", "a"]` — so Bear's sidebar index shows the note under every ancestor.
+4. Build markdown content: `# Title` on the first line, then explicit `--tags` as `#tag1 #tag2` on the next line (body hashtags stay where the user wrote them; ancestor expansions are index-only and not written into the body), then the body after a blank line.
+5. Look up existing tags. For each indexed tag (explicit + body + ancestors):
    - If a matching `SFNoteTag` record exists, use its `recordName`
    - If not, create a new `SFNoteTag` record
-5. Submit all operations (note create + any new tag creates) in a single `records/modify` call
-6. If a local cache exists, update it with the new note
+6. Submit all operations (note create + any new tag creates) in a single `records/modify` call
+7. If a local cache exists, update it with the new note
 
 **Note creation fields:**
 The new SFNote record is created with all fields from the schema populated with sensible defaults: `archived=0`, `trashed=0`, `pinned=0`, `locked=0`, `encrypted=0`, `hasImages=0`, `hasFiles=0`, `hasSourceCode=0`, `todoCompleted=0`, `todoIncompleted=0`, `version=3`, `lastEditingDevice="Bear CLI"`, a fresh vector clock, and a UUID-generated `uniqueIdentifier` and `recordName` (same UUID for both).
@@ -824,6 +831,9 @@ Exactly one of `--stdin`, `--append`, or `--editor` must be specified. If none i
 
 **Update fields:**
 When updating a note, the CLI sends: `textADP`, `title` (extracted from the first `# ` line of the new text), `subtitleADP` (first non-title, non-tag, non-empty line), `vectorClock` (incremented), `sf_modificationDate` (current time), `lastEditingDevice` ("Bear CLI"), `todoCompleted` (count of `- [x]` in new text), `todoIncompleted` (count of `- [ ]` in new text).
+
+**Tag re-indexing:**
+On every edit the CLI re-derives the tag index from the hashtags in the new body (plus ancestor expansion) and writes `tagsStrings` + `tags` (UUID list) alongside the body update. Missing `SFNoteTag` records are auto-created. Effect: adding or removing a `#tag` in the body via `--stdin`/`--append`/`--editor` now updates Bear's sidebar immediately, and notes whose index got out of sync with their body (e.g. from the old create-without-body-index bug) heal themselves the next time they're edited.
 
 **Output:**
 ```

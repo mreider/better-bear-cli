@@ -19,6 +19,7 @@ public struct ContextCommand: ParsableCommand {
             ContextTriage.self,
             ContextPush.self,
             ContextRemoveExternal.self,
+            ContextSetPrefix.self,
         ]
     )
     public init() {}
@@ -637,6 +638,116 @@ struct ContextRemoveExternal: ParsableCommand {
                let str = String(data: data, encoding: .utf8) { print(str) }
         } else {
             print("Removed external/\(filename)")
+        }
+    }
+}
+
+// MARK: - Set Prefix
+
+struct ContextSetPrefix: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "set-prefix",
+        abstract: "Change the context-library tag prefix and re-tag existing notes"
+    )
+
+    @Argument(help: "New tag prefix (without #) — e.g. 10-projects")
+    var newPrefix: String
+
+    @Flag(name: .long, help: "Output as JSON")
+    var json: Bool = false
+
+    func run() throws {
+        let auth = try loadAuth()
+        let api = CloudKitAPI(auth: auth)
+        let newPrefix = self.newPrefix
+        let json = self.json
+
+        try runAsync {
+            guard ContextConfig.exists() else {
+                throw ContextError.notInitialized
+            }
+            var config = try ContextConfig.load()
+            let oldPrefix = config.tagPrefix
+
+            if oldPrefix == newPrefix {
+                if json {
+                    let out: [String: Any] = [
+                        "old_prefix": oldPrefix, "new_prefix": newPrefix,
+                        "notes_updated": 0, "changed": false, "reason": "already set",
+                    ]
+                    if let data = try? JSONSerialization.data(withJSONObject: out, options: .prettyPrinted),
+                       let s = String(data: data, encoding: .utf8) { print(s) }
+                } else {
+                    print("Tag prefix is already '\(newPrefix)' — nothing to do.")
+                }
+                return
+            }
+
+            // Scan all notes; rename tag prefix on those that carry it.
+            let allRecords = try await api.queryAllNotes(
+                desiredKeys: ["uniqueIdentifier", "tagsStrings"]
+            )
+
+            var matchingRecordNames: [String] = []
+            for stub in allRecords {
+                guard let arr = stub.fields["tagsStrings"]?.value.arrayValue else { continue }
+                let tags = arr.compactMap { $0.stringValue }
+                let hasMatch = tags.contains { t in
+                    t == oldPrefix || t.hasPrefix(oldPrefix + "/")
+                }
+                if hasMatch {
+                    matchingRecordNames.append(stub.recordName)
+                }
+            }
+
+            var updated = 0
+            for recName in matchingRecordNames {
+                guard let full = try await api.lookupRecords(ids: [recName]).first else { continue }
+
+                var body = ""
+                if let t = full.fields["textADP"]?.value.stringValue {
+                    body = t
+                } else if let url = BearNote(from: full).textAssetURL {
+                    body = try await api.downloadAsset(url: url)
+                }
+
+                let newBody = TagParser.renameTagPrefix(
+                    in: body, from: oldPrefix, to: newPrefix
+                )
+
+                // Re-derive the full tag index from the renamed body so the
+                // sidebar matches. This matches EditNote's auto-re-index.
+                let bodyTags = TagParser.extractTags(from: newBody)
+                let indexed = TagParser.expandAncestors(bodyTags)
+                let nameToUUID = try await api.ensureTagsExist(names: indexed)
+                let tagUUIDs = indexed.compactMap { nameToUUID[$0] }
+
+                _ = try await api.updateNote(
+                    record: full, newText: newBody,
+                    tagUUIDs: tagUUIDs, tagStrings: indexed
+                )
+                updated += 1
+            }
+
+            // Persist the new prefix in the context config.
+            config.tagPrefix = newPrefix
+            try config.save()
+
+            if json {
+                let out: [String: Any] = [
+                    "old_prefix": oldPrefix,
+                    "new_prefix": newPrefix,
+                    "notes_updated": updated,
+                    "changed": true,
+                ]
+                if let data = try? JSONSerialization.data(withJSONObject: out, options: .prettyPrinted),
+                   let s = String(data: data, encoding: .utf8) { print(s) }
+            } else {
+                print("Renamed tag prefix: '\(oldPrefix)' → '\(newPrefix)'")
+                print("Updated \(updated) note(s).")
+                print("")
+                print("Run `bcli context sync` to refresh the library.")
+            }
         }
     }
 }

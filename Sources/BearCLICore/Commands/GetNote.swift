@@ -68,6 +68,7 @@ public struct GetNote: ParsableCommand {
                     "id": note.uniqueIdentifier,
                     "title": note.title,
                     "tags": note.tags,
+                    "attached_tags": note.attachedTags,
                     "pinned": note.pinned,
                     "text": noteText,
                 ]

@@ -107,6 +107,7 @@ public struct ListNotes: ParsableCommand {
                 "id": note.uniqueIdentifier,
                 "title": note.title,
                 "tags": note.tags,
+                "attached_tags": note.attachedTags,
                 "pinned": note.pinned,
                 "modificationDate": note.modificationDate?.timeIntervalSince1970 ?? 0,
             ]

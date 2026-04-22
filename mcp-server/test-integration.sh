@@ -256,6 +256,47 @@ else
 fi
 
 echo ""
+echo "=== 19. bear_create_note (body hashtags — issue #20 Bug 1) ==="
+OUT=$($BCLI create "MCP Tag Bug1" --body "#repro_body_tag hello" --json 2>&1)
+BUG1_ID=$(echo "$OUT" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+CLEANUP_IDS+=("$BUG1_ID")
+OUT=$($BCLI get "$BUG1_ID" --json 2>&1)
+if echo "$OUT" | python3 -c "import sys,json; d=json.load(sys.stdin); assert 'repro_body_tag' in d.get('tags',[]), d.get('tags')" 2>/dev/null; then
+  pass "body hashtag indexed in tags"
+else
+  fail "body hashtag indexing" "tags=$(echo "$OUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tags'))")"
+fi
+
+echo ""
+echo "=== 20. bear_create_note (hierarchical tag ancestor expansion) ==="
+OUT=$($BCLI create "MCP Tag Nested" --body "body" --tags "bb_issue20/leaf" --json 2>&1)
+NESTED_ID=$(echo "$OUT" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+CLEANUP_IDS+=("$NESTED_ID")
+OUT=$($BCLI get "$NESTED_ID" --json 2>&1)
+TAGS=$(echo "$OUT" | python3 -c "import sys,json; print(sorted(json.load(sys.stdin).get('tags',[])))")
+ATT=$(echo "$OUT" | python3 -c "import sys,json; print(sorted(json.load(sys.stdin).get('attached_tags',[])))")
+if [ "$TAGS" = "['bb_issue20', 'bb_issue20/leaf']" ] && [ "$ATT" = "['bb_issue20/leaf']" ]; then
+  pass "ancestor expansion in tags, leaf-only in attached_tags"
+else
+  fail "ancestor expansion" "tags=$TAGS attached_tags=$ATT"
+fi
+
+echo ""
+echo "=== 21. bear_remove_tag (ancestor removal — issue #20 Bug 2) ==="
+# First add a nested tag to a fresh note
+OUT=$($BCLI create "MCP Tag Remove" --body "plain body" --json 2>&1)
+RM_ID=$(echo "$OUT" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+CLEANUP_IDS+=("$RM_ID")
+$BCLI tag add "$RM_ID" "bb_rm20/child" --json >/dev/null
+# Now try to remove the ancestor — should succeed, not say "tag not found"
+OUT=$($BCLI tag remove "$RM_ID" "bb_rm20" --json 2>&1)
+if echo "$OUT" | python3 -c "import sys,json; d=json.load(sys.stdin); assert d.get('removed') == True" 2>/dev/null; then
+  pass "ancestor tag removal succeeded"
+else
+  fail "ancestor tag remove" "$OUT"
+fi
+
+echo ""
 echo "==============================="
 echo "Results: $PASS passed, $FAIL failed"
 echo "==============================="

@@ -156,6 +156,34 @@ public struct CloudKitAPI {
 
     // MARK: - Query Tags
 
+    /// Ensure SFNoteTag records exist for every name in `names`. Missing tags
+    /// are created in a single records/modify call. Returns a map of every
+    /// requested name to its record UUID.
+    public func ensureTagsExist(names: [String]) async throws -> [String: String] {
+        guard !names.isEmpty else { return [:] }
+
+        let existing = try await queryTags()
+        var nameToUUID: [String: String] = [:]
+        for record in existing {
+            if let t = record.fields["title"]?.value.stringValue {
+                nameToUUID[t] = record.recordName
+            }
+        }
+
+        let now = Int64(Date().timeIntervalSince1970 * 1000)
+        var createOps: [[String: AnyCodableValue]] = []
+        for name in names where nameToUUID[name] == nil {
+            let tagID = UUID().uuidString
+            nameToUUID[name] = tagID
+            createOps.append(buildCreateTagOperation(tagID: tagID, title: name, now: now))
+        }
+
+        if !createOps.isEmpty {
+            _ = try await modifyRecords(operations: createOps)
+        }
+        return nameToUUID
+    }
+
     public func queryTags(limit: Int = 200) async throws -> [CKRecord] {
         let query = CKQuery(
             recordType: "SFNoteTag",
@@ -356,12 +384,25 @@ public struct CloudKitAPI {
         // Build subtitle from first line of body text
         let subtitle = text.components(separatedBy: "\n").first ?? ""
 
+        // Union explicit --tags with hashtags found in the body, then expand
+        // hierarchical ancestors so CloudKit's tagsStrings matches what Bear
+        // desktop would write if the user typed the same markdown there.
+        var merged: [String] = []
+        var seen = Set<String>()
+        for t in tags where seen.insert(t).inserted {
+            merged.append(t)
+        }
+        for t in TagParser.extractTags(from: text) where seen.insert(t).inserted {
+            merged.append(t)
+        }
+        let indexedTags = TagParser.expandAncestors(merged)
+
         // Look up or create tag records
         var tagUUIDs: [AnyCodableValue] = []
         var tagStrings: [AnyCodableValue] = []
         var operations: [[String: AnyCodableValue]] = []
 
-        if !tags.isEmpty {
+        if !indexedTags.isEmpty {
             // Fetch existing tags to find matches
             let existingTags = try await queryTags()
             var tagMap: [String: String] = [:] // title -> recordName
@@ -371,7 +412,7 @@ public struct CloudKitAPI {
                 }
             }
 
-            for tag in tags {
+            for tag in indexedTags {
                 tagStrings.append(.string(tag))
                 if let existingID = tagMap[tag] {
                     tagUUIDs.append(.string(existingID))

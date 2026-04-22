@@ -46,9 +46,14 @@ struct TagAdd: ParsableCommand {
                 noteText = try await api.downloadAsset(url: assetURL)
             }
 
-            // Check if tag already exists in the note
-            let tagMarker = tagName.contains(" ") ? "#\(tagName)#" : "#\(tagName)"
-            if noteText.contains(tagMarker) {
+            // Check CloudKit's tag index for existence — the authoritative view.
+            let currentStrings: [String]
+            if let arr = record.fields["tagsStrings"]?.value.arrayValue {
+                currentStrings = arr.compactMap { $0.stringValue }
+            } else {
+                currentStrings = []
+            }
+            if currentStrings.contains(tagName) {
                 if json {
                     let output: [String: Any] = [
                         "id": noteID, "tag": tagName, "added": false, "reason": "already tagged",
@@ -61,31 +66,44 @@ struct TagAdd: ParsableCommand {
                 return
             }
 
-            // Add tag after the title line (or first line)
-            let lines = noteText.components(separatedBy: "\n")
-            var newLines = lines
-            // Find the right place — after title and existing tags
-            var insertIdx = 1
-            for i in 1..<lines.count {
-                let trimmed = lines[i].trimmingCharacters(in: .whitespaces)
-                if trimmed.hasPrefix("#") && !trimmed.hasPrefix("# ") && !trimmed.hasPrefix("##") {
-                    insertIdx = i + 1
-                } else if !trimmed.isEmpty {
-                    break
-                } else {
-                    insertIdx = i + 1
-                }
-            }
+            let tagMarker = tagName.contains(" ") ? "#\(tagName)#" : "#\(tagName)"
+            let newText: String
 
-            // Insert the tag
-            if insertIdx < newLines.count && newLines[insertIdx - 1].hasPrefix("#") && !newLines[insertIdx - 1].hasPrefix("# ") {
-                // Append to existing tag line
-                newLines[insertIdx - 1] += " \(tagMarker)"
+            // Only insert a body marker if the literal token isn't already
+            // present. A note may be in the "body has token but index is
+            // stale" state (e.g. after hitting the old createNote body-hashtag
+            // bug); in that case we still want to (re-)index without doubling
+            // the body token.
+            let bodyTags = TagParser.extractTags(from: noteText)
+            if bodyTags.contains(tagName) {
+                newText = noteText
             } else {
-                newLines.insert(tagMarker, at: insertIdx)
-            }
+                // Add tag after the title line (or first line)
+                let lines = noteText.components(separatedBy: "\n")
+                var newLines = lines
+                // Find the right place — after title and existing tags
+                var insertIdx = 1
+                for i in 1..<lines.count {
+                    let trimmed = lines[i].trimmingCharacters(in: .whitespaces)
+                    if trimmed.hasPrefix("#") && !trimmed.hasPrefix("# ") && !trimmed.hasPrefix("##") {
+                        insertIdx = i + 1
+                    } else if !trimmed.isEmpty {
+                        break
+                    } else {
+                        insertIdx = i + 1
+                    }
+                }
 
-            let newText = newLines.joined(separator: "\n")
+                // Insert the tag
+                if insertIdx < newLines.count && newLines[insertIdx - 1].hasPrefix("#") && !newLines[insertIdx - 1].hasPrefix("# ") {
+                    // Append to existing tag line
+                    newLines[insertIdx - 1] += " \(tagMarker)"
+                } else {
+                    newLines.insert(tagMarker, at: insertIdx)
+                }
+
+                newText = newLines.joined(separator: "\n")
+            }
 
             // Build updated tag metadata so Bear's tag index reflects the change
             let (tagUUIDs, tagStringValues) = try await buildTagMetadata(
@@ -144,27 +162,16 @@ struct TagRemove: ParsableCommand {
                 noteText = try await api.downloadAsset(url: assetURL)
             }
 
-            // Remove the tag (both #tag and #tag with spaces#)
-            let tagHash = tagName.contains(" ") ? "#\(tagName)#" : "#\(tagName)"
-            var newText = noteText
-
-            // Remove standalone tag line
-            let lines = newText.components(separatedBy: "\n")
-            var newLines: [String] = []
-            for line in lines {
-                let trimmed = line.trimmingCharacters(in: .whitespaces)
-                if trimmed == tagHash {
-                    continue // remove entire line
-                }
-                // Remove tag from a line with multiple tags
-                var modified = line.replacingOccurrences(of: " \(tagHash)", with: "")
-                modified = modified.replacingOccurrences(of: "\(tagHash) ", with: "")
-                modified = modified.replacingOccurrences(of: tagHash, with: "")
-                newLines.append(modified)
+            // Check existence in the CloudKit index, not the body markdown.
+            // Ancestor tags may be indexed without a literal body token.
+            let currentStrings: [String]
+            if let arr = record.fields["tagsStrings"]?.value.arrayValue {
+                currentStrings = arr.compactMap { $0.stringValue }
+            } else {
+                currentStrings = []
             }
-            newText = newLines.joined(separator: "\n")
 
-            if newText == noteText {
+            guard currentStrings.contains(tagName) else {
                 if json {
                     let output: [String: Any] = [
                         "id": noteID, "tag": tagName, "removed": false, "reason": "tag not found",
@@ -176,6 +183,12 @@ struct TagRemove: ParsableCommand {
                 }
                 return
             }
+
+            // Strip the tag marker from the body only where it appears as a
+            // real token. For an ancestor tag whose only descendant is still
+            // present (e.g. removing `parent` while `#parent/child` remains),
+            // the body won't contain a literal `#parent` and stays untouched.
+            let newText = TagParser.stripTag(from: noteText, name: tagName)
 
             // Build updated tag metadata so Bear's tag index reflects the removal
             let (tagUUIDs, tagStringValues) = try await buildTagMetadata(
@@ -326,53 +339,45 @@ struct TagDelete: ParsableCommand {
 
 // MARK: - Shared helpers
 
-/// Build the updated `tags` (UUID list) and `tagsStrings` (string list) for a note
-/// after adding or removing a tag. This ensures Bear's sidebar tag index stays in sync.
+/// Build the updated `tags` (UUID list) and `tagsStrings` (string list) for a
+/// note after adding or removing a tag. Matches Bear desktop's index behaviour:
+/// adding a hierarchical tag also indexes every ancestor; removing a tag drops
+/// any ancestor that no longer has a descendant in the note's index.
 private func buildTagMetadata(
     api: CloudKitAPI,
     record: CKRecord,
     adding: String? = nil,
     removing: String? = nil
 ) async throws -> (tagUUIDs: [String], tagStrings: [String]) {
-    // Get current tag strings from the note record
     var currentStrings: [String] = []
     if let arr = record.fields["tagsStrings"]?.value.arrayValue {
         currentStrings = arr.compactMap { $0.stringValue }
     }
 
-    // Get current tag UUIDs from the note record
-    var currentUUIDs: [String] = []
-    if let arr = record.fields["tags"]?.value.arrayValue {
-        currentUUIDs = arr.compactMap { $0.stringValue }
-    }
-
-    // Fetch all existing SFNoteTag records to map names to UUIDs
-    let allTags = try await api.queryTags()
-    var tagNameToUUID: [String: String] = [:]
-    for tagRecord in allTags {
-        if let title = tagRecord.fields["title"]?.value.stringValue {
-            tagNameToUUID[title] = tagRecord.recordName
-        }
-    }
-
-    if let add = adding, !currentStrings.contains(add) {
-        currentStrings.append(add)
-        if let uuid = tagNameToUUID[add] {
-            currentUUIDs.append(uuid)
+    if let add = adding {
+        for t in TagParser.expandAncestors([add]) where !currentStrings.contains(t) {
+            currentStrings.append(t)
         }
     }
 
     if let remove = removing {
-        if let idx = currentStrings.firstIndex(of: remove) {
-            currentStrings.remove(at: idx)
-        }
-        if let uuid = tagNameToUUID[remove],
-           let idx = currentUUIDs.firstIndex(of: uuid) {
-            currentUUIDs.remove(at: idx)
+        currentStrings.removeAll(where: { $0 == remove })
+        // If the removed tag was hierarchical, drop ancestors that are now orphaned.
+        let parts = remove.split(separator: "/").map(String.init)
+        if parts.count > 1 {
+            for i in 1..<parts.count {
+                let ancestor = parts.prefix(i).joined(separator: "/")
+                let stillHasDescendant = currentStrings.contains { $0.hasPrefix(ancestor + "/") }
+                if !stillHasDescendant {
+                    currentStrings.removeAll(where: { $0 == ancestor })
+                }
+            }
         }
     }
 
-    return (currentUUIDs, currentStrings)
+    let nameToUUID = try await api.ensureTagsExist(names: currentStrings)
+    let uuids = currentStrings.compactMap { nameToUUID[$0] }
+    return (uuids, currentStrings)
 }
 
 private func findNoteRecord(api: CloudKitAPI, noteID: String) async throws -> CKRecord {

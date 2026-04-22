@@ -11,7 +11,7 @@ export const tools: Record<string, ToolHandler> = {
     tool: {
       name: "bear_list_notes",
       description:
-        "List Bear notes with optional tag filtering. Returns an array of notes with IDs, titles, tags, pin status, and modification dates. Notes with 'locked: true' are private/encrypted in Bear and their body content is not searchable — if a search returns no results, check whether the relevant note is locked. Use bear_get_note to read the full content of a specific note.",
+        "List Bear notes with optional tag filtering. Returns an array of notes with IDs, titles, tags, pin status, and modification dates. Each note includes two tag fields: 'tags' mirrors Bear's CloudKit index verbatim (includes ancestor expansions — a note tagged #parent/child will show both 'parent' and 'parent/child'); 'attached_tags' shows only leaf tags (the most-specific tag on each branch). Notes with 'locked: true' are private/encrypted in Bear and their body content is not searchable — if a search returns no results, check whether the relevant note is locked. Use bear_get_note to read the full content of a specific note.",
       inputSchema: {
         type: "object" as const,
         properties: {
@@ -54,7 +54,7 @@ export const tools: Record<string, ToolHandler> = {
     tool: {
       name: "bear_get_note",
       description:
-        "Get a single Bear note's full content and metadata by ID. Returns the note title, tags, full markdown text, and dates. If the note is locked/private, 'locked: true' will be included in the response. Use the 'raw' option to get just the markdown without metadata.",
+        "Get a single Bear note's full content and metadata by ID. Returns the note title, tags, full markdown text, and dates. The response includes 'tags' (CloudKit index, may contain ancestor tags like 'parent' for a note tagged '#parent/child') and 'attached_tags' (leaves only). If the note is locked/private, 'locked: true' will be included in the response. Use the 'raw' option to get just the markdown without metadata.",
       inputSchema: {
         type: "object" as const,
         properties: {
@@ -148,7 +148,7 @@ export const tools: Record<string, ToolHandler> = {
     tool: {
       name: "bear_create_note",
       description:
-        "Create a new Bear note with a title, optional body text, tags, and YAML front matter. Front matter is stored as a collapsed metadata block at the top of the note. Returns the new note's ID.",
+        "Create a new Bear note with a title, optional body text, tags, and YAML front matter. Hashtags written inline in the body (e.g. '#my_tag' or '#parent/child') are extracted and registered as real tags on the note, matching Bear's desktop-app behaviour. Tags from the 'tags' array are indexed regardless of whether they appear in the body. Hierarchical tags like '#parent/child' also index every ancestor (so they show up under #parent in Bear's sidebar). Front matter is stored as a collapsed metadata block at the top of the note. Returns the new note's ID.",
       inputSchema: {
         type: "object" as const,
         properties: {
@@ -535,7 +535,7 @@ export const tools: Record<string, ToolHandler> = {
     tool: {
       name: "bear_add_tag",
       description:
-        "Add a tag to an existing Bear note. The tag is inserted into the note's markdown.",
+        "Add a tag to an existing Bear note. The tag is inserted into the note's markdown. Hierarchical tags like 'parent/child' also index every ancestor — so the note becomes discoverable under both #parent and #parent/child in Bear's sidebar.",
       inputSchema: {
         type: "object" as const,
         properties: {
@@ -569,7 +569,7 @@ export const tools: Record<string, ToolHandler> = {
     tool: {
       name: "bear_remove_tag",
       description:
-        "Remove a tag from a specific Bear note.",
+        "Remove a tag from a specific Bear note. Works on any tag visible in 'tags' on the note — including ancestor tags like 'parent' that exist only as hierarchical expansions. Removing a hierarchical leaf like 'parent/child' also drops orphaned ancestors from the tag index.",
       inputSchema: {
         type: "object" as const,
         properties: {
@@ -1132,6 +1132,36 @@ export const tools: Record<string, ToolHandler> = {
       if (input.title) args.push("--title", String(input.title));
       return args;
     },
+  },
+
+  bear_context_set_prefix: {
+    tool: {
+      name: "bear_context_set_prefix",
+      description:
+        "Change the context library's tag prefix and re-tag every Bear note that currently uses the old prefix. Sub-tags are preserved — `#context/research` becomes `#<new>/research`. Updates both the markdown body and the CloudKit tag index, and persists the new prefix to the context config. Useful when aligning the qualifier tag with a broader naming scheme like Johnny Decimal (e.g. '10-projects'). Run `bear_context_sync` afterwards to refresh the library.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          new_prefix: {
+            type: "string",
+            description:
+              "New tag prefix without the leading #. Example: '10-projects'.",
+          },
+        },
+        required: ["new_prefix"],
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    buildArgs: (input) => [
+      "context",
+      "set-prefix",
+      String(input.new_prefix),
+      "--json",
+    ],
   },
 
   bear_context_remove_external: {
