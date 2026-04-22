@@ -174,6 +174,75 @@ final class TagParserAncestorsTests: XCTestCase {
     }
 }
 
+final class TagParserRemoveTests: XCTestCase {
+
+    func testRemoveFlatTag() {
+        XCTAssertEqual(
+            TagParser.remainingTagsAfterRemoval(from: ["foo", "bar"], removing: "foo"),
+            ["bar"]
+        )
+    }
+
+    func testRemoveTagNotPresentIsNoOp() {
+        XCTAssertEqual(
+            TagParser.remainingTagsAfterRemoval(from: ["foo", "bar"], removing: "baz"),
+            ["foo", "bar"]
+        )
+    }
+
+    func testRemoveLeafDropsAllOrphanedAncestors() {
+        // The Issue A regression. Before the deep→shallow walk, this returned
+        // `["a"]`: when ancestor `a` was evaluated, `a/b` was still present so
+        // `a` was kept; then `a/b` was removed but `a` was never re-checked.
+        XCTAssertEqual(
+            TagParser.remainingTagsAfterRemoval(
+                from: ["a/b/c", "a/b", "a"], removing: "a/b/c"
+            ),
+            []
+        )
+    }
+
+    func testRemoveLeafKeepsAncestorWhenSiblingSurvives() {
+        // `a/d` is a descendant of `a`, so `a` must survive the cleanup when
+        // `a/b/c` (and its unique ancestor `a/b`) are removed.
+        XCTAssertEqual(
+            TagParser.remainingTagsAfterRemoval(
+                from: ["a/b/c", "a/b", "a", "a/d"], removing: "a/b/c"
+            ),
+            ["a", "a/d"]
+        )
+    }
+
+    func testRemoveTwoLevelLeaf() {
+        XCTAssertEqual(
+            TagParser.remainingTagsAfterRemoval(
+                from: ["parent/child", "parent"], removing: "parent/child"
+            ),
+            []
+        )
+    }
+
+    func testRemoveMiddleOfHierarchy() {
+        // Removing `a/b` when `a/b/c` is still indexed should leave the leaf
+        // and its required ancestor chain intact.
+        XCTAssertEqual(
+            TagParser.remainingTagsAfterRemoval(
+                from: ["a/b/c", "a/b", "a"], removing: "a/b"
+            ),
+            ["a/b/c", "a"]
+        )
+    }
+
+    func testRemovePreservesInputOrder() {
+        XCTAssertEqual(
+            TagParser.remainingTagsAfterRemoval(
+                from: ["zeta", "a/b", "a", "middle"], removing: "a/b"
+            ),
+            ["zeta", "middle"]
+        )
+    }
+}
+
 final class TagParserStripTests: XCTestCase {
 
     func testStripSimpleTag() {

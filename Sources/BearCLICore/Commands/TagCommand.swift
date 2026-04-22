@@ -361,18 +361,9 @@ private func buildTagMetadata(
     }
 
     if let remove = removing {
-        currentStrings.removeAll(where: { $0 == remove })
-        // If the removed tag was hierarchical, drop ancestors that are now orphaned.
-        let parts = remove.split(separator: "/").map(String.init)
-        if parts.count > 1 {
-            for i in 1..<parts.count {
-                let ancestor = parts.prefix(i).joined(separator: "/")
-                let stillHasDescendant = currentStrings.contains { $0.hasPrefix(ancestor + "/") }
-                if !stillHasDescendant {
-                    currentStrings.removeAll(where: { $0 == ancestor })
-                }
-            }
-        }
+        currentStrings = TagParser.remainingTagsAfterRemoval(
+            from: currentStrings, removing: remove
+        )
     }
 
     let nameToUUID = try await api.ensureTagsExist(names: currentStrings)

@@ -78,6 +78,37 @@ public enum TagParser {
         }
     }
 
+    /// Compute the new indexed-tag list after removing `tag` from `strings`,
+    /// additionally pruning any ancestor that no longer has a descendant in
+    /// the result. Input order of surviving entries is preserved.
+    ///
+    /// The ancestor pass walks **deep → shallow** so that each ancestor's
+    /// "do I still have a descendant?" check sees the removals made in prior
+    /// iterations. Walking shallow → deep strands the shallowest ancestor:
+    /// given `["a/b/c", "a/b", "a"]` and removal of `"a/b/c"`, the old order
+    /// left `"a"` in the result because `"a/b"` was still present when `"a"`
+    /// was evaluated. See the matching unit tests.
+    ///
+    /// Pure and order-stable — safe to unit-test without CloudKit.
+    public static func remainingTagsAfterRemoval(
+        from strings: [String], removing tag: String
+    ) -> [String] {
+        var result = strings
+        result.removeAll(where: { $0 == tag })
+
+        let parts = tag.split(separator: "/").map(String.init)
+        guard parts.count > 1 else { return result }
+
+        for i in (1..<parts.count).reversed() {
+            let ancestor = parts.prefix(i).joined(separator: "/")
+            let stillHasDescendant = result.contains { $0.hasPrefix(ancestor + "/") }
+            if !stillHasDescendant {
+                result.removeAll(where: { $0 == ancestor })
+            }
+        }
+        return result
+    }
+
     /// Remove every occurrence of `#tagName` (or `#multi word tag#`) from a
     /// markdown body, honouring tag-boundary rules so that stripping `parent`
     /// does not truncate `#parent/child`. Collapses the adjacent space so the
