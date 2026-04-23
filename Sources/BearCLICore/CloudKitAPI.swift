@@ -201,6 +201,30 @@ public struct CloudKitAPI {
         return response.records
     }
 
+    /// Look up a single `SFNoteTag` by its `title` field. Returns nil if no
+    /// such tag exists. Uses a server-side filter so it stays O(1) on the
+    /// wire regardless of how many tags the user has.
+    public func findTagRecord(byName name: String) async throws -> CKRecord? {
+        let query = CKQuery(
+            recordType: "SFNoteTag",
+            filterBy: [
+                CKFilter(
+                    fieldName: "title",
+                    comparator: "EQUALS",
+                    fieldValue: CKFieldValue(value: .string(name), type: "STRING")
+                ),
+            ],
+            sortBy: nil
+        )
+        let request = CKRecordQueryRequest(
+            zoneID: bearZone,
+            query: query,
+            resultsLimit: 1
+        )
+        let response: CKRecordQueryResponse = try await post(path: "records/query", body: request)
+        return response.records.first
+    }
+
     // MARK: - Lookup by ID
 
     public func lookupRecords(ids: [String], desiredKeys: [String]? = nil) async throws -> [CKRecord] {
@@ -361,6 +385,25 @@ public struct CloudKitAPI {
         }
 
         return response.records.compactMap { $0.toRecord() }
+    }
+
+    /// Permanently delete a record from the Notes zone. Uses CloudKit's
+    /// `forceDelete` op so the call succeeds without a matching
+    /// `recordChangeTag` — suitable for removing `SFNoteTag` records whose
+    /// change-tag we may not have cached.
+    ///
+    /// Note-level deletion in bcli is soft (see `trashNote` — sets `trashed`
+    /// true via an update). `deleteRecord` is only used today for removing
+    /// tag records, where a hard delete matches the user expectation that
+    /// `bear delete <tag>` makes the tag disappear from Bear's sidebar.
+    public func deleteRecord(recordName: String) async throws {
+        let operation: [String: AnyCodableValue] = [
+            "operationType": .string("forceDelete"),
+            "record": .dictionary([
+                "recordName": .string(recordName),
+            ]),
+        ]
+        _ = try await modifyRecords(operations: [operation])
     }
 
     /// Create a new note. Returns the created CKRecord.

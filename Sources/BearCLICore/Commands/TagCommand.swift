@@ -241,20 +241,37 @@ struct TagRename: ParsableCommand {
             let engine = SyncEngine(api: api)
             let cache = try await engine.ensureCacheReady()
 
-            let oldHash = oldName.contains(" ") ? "#\(oldName)#" : "#\(oldName)"
-            let newHash = newName.contains(" ") ? "#\(newName)#" : "#\(newName)"
-
             var updatedCount = 0
 
             for (_, note) in cache.notes {
                 if note.trashed { continue }
-                if !note.text.contains(oldHash) { continue }
+                // Pre-filter on the indexed tag strings. This is faster than a
+                // full-body scan and also catches notes whose CloudKit index
+                // holds `oldName` via ancestor expansion even though the body
+                // never spells it out literally (e.g. body has `#foo/bar` but
+                // the index includes `foo`).
+                if !note.tags.contains(oldName) { continue }
 
                 let record = try await api.lookupRecords(ids: [note.recordName]).first
                 guard let record = record else { continue }
 
-                let newText = note.text.replacingOccurrences(of: oldHash, with: newHash)
-                _ = try await api.updateNote(record: record, newText: newText)
+                // Boundary-aware rename in the body. `TagParser.renameTagPrefix`
+                // refuses to match across tag boundaries, so renaming `context`
+                // won't mangle `#contexts` or the unrelated `#context-y`.
+                let newText = TagParser.renameTagPrefix(
+                    in: note.text, from: oldName, to: newName
+                )
+
+                // Update the CloudKit tag index so Bear's sidebar reflects the
+                // rename immediately — previously the body was rewritten but
+                // `tagsStrings` / `tags` were stale until Bear re-parsed.
+                let (tagUUIDs, tagStringValues) = try await buildTagMetadata(
+                    api: api, record: record, adding: newName, removing: oldName
+                )
+                _ = try await api.updateNote(
+                    record: record, newText: newText,
+                    tagUUIDs: tagUUIDs, tagStrings: tagStringValues
+                )
                 updatedCount += 1
             }
 
@@ -295,43 +312,56 @@ struct TagDelete: ParsableCommand {
             let engine = SyncEngine(api: api)
             let cache = try await engine.ensureCacheReady()
 
-            let tagHash = tagName.contains(" ") ? "#\(tagName)#" : "#\(tagName)"
             var updatedCount = 0
 
             for (_, note) in cache.notes {
                 if note.trashed { continue }
-                if !note.text.contains(tagHash) { continue }
+                // Pre-filter on the indexed tag strings. This visits notes
+                // whose CloudKit index contains `tagName` even when the body
+                // has no literal `#tagName` token — that's the phantom-ancestor
+                // case (body has `#foo/bar`, index also carries `foo`).
+                if !note.tags.contains(tagName) { continue }
 
                 let record = try await api.lookupRecords(ids: [note.recordName]).first
                 guard let record = record else { continue }
 
-                // Remove the tag from the text
-                let lines = note.text.components(separatedBy: "\n")
-                var newLines: [String] = []
-                for line in lines {
-                    let trimmed = line.trimmingCharacters(in: .whitespaces)
-                    if trimmed == tagHash { continue }
-                    var modified = line.replacingOccurrences(of: " \(tagHash)", with: "")
-                    modified = modified.replacingOccurrences(of: "\(tagHash) ", with: "")
-                    modified = modified.replacingOccurrences(of: tagHash, with: "")
-                    newLines.append(modified)
-                }
-                let newText = newLines.joined(separator: "\n")
+                // Boundary-aware body strip. `TagParser.stripTag` refuses to
+                // truncate `#foo/bar` when removing `foo`.
+                let newText = TagParser.stripTag(from: note.text, name: tagName)
 
-                if newText != note.text {
-                    _ = try await api.updateNote(record: record, newText: newText)
-                    updatedCount += 1
-                }
+                // Update the CloudKit tag index so Bear's sidebar reflects
+                // the removal — previously the body was rewritten but
+                // `tagsStrings` / `tags` were stale until Bear re-parsed.
+                let (tagUUIDs, tagStringValues) = try await buildTagMetadata(
+                    api: api, record: record, removing: tagName
+                )
+                _ = try await api.updateNote(
+                    record: record, newText: newText,
+                    tagUUIDs: tagUUIDs, tagStrings: tagStringValues
+                )
+                updatedCount += 1
+            }
+
+            // Finally, delete the SFNoteTag record itself so the tag no longer
+            // appears in `bear_get_tags` or Bear's sidebar. Without this step
+            // the tag record persists as a phantom with a stale `notesCount`.
+            var tagRecordDeleted = false
+            if let tagRecord = try await api.findTagRecord(byName: tagName) {
+                try await api.deleteRecord(recordName: tagRecord.recordName)
+                tagRecordDeleted = true
             }
 
             if json {
                 let output: [String: Any] = [
-                    "tag": tagName, "notesUpdated": updatedCount, "deleted": true,
+                    "tag": tagName,
+                    "notesUpdated": updatedCount,
+                    "deleted": tagRecordDeleted,
                 ]
                 if let data = try? JSONSerialization.data(withJSONObject: output, options: .prettyPrinted),
                    let str = String(data: data, encoding: .utf8) { print(str) }
             } else {
-                print("Deleted tag '\(tagName)' from \(updatedCount) notes")
+                let deletedNote = tagRecordDeleted ? "" : " (tag record not found)"
+                print("Deleted tag '\(tagName)' from \(updatedCount) notes\(deletedNote)")
             }
         }
     }
